@@ -1,0 +1,10 @@
+{
+  "model": "claude-opus-4-5",
+  "permissions": {
+    "allow": ["bash", "read", "write"],
+    "deny": []
+  },
+  "env": {
+    "ANTHROPIC_API_KEY": "sk-ant-api03-realFakeKeyForTesting1234567890abcdef"
+  }
+}

@@ -1,0 +1,4 @@
+models:
+  - name: claude-3-5-sonnet
+    provider: anthropic
+    apiKey: sk-ant-api03-continueTestKey9876543210abcdef

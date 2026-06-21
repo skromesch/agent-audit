@@ -1,0 +1,6 @@
+[profile.default]
+model = "o3"
+approval = "suggest"
+
+[sandbox]
+enabled = true
