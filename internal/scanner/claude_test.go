@@ -44,8 +44,8 @@ func TestClaudeScannerDetectsSecrets(t *testing.T) {
 	claudeDir := filepath.Join(dir, ".claude")
 	os.MkdirAll(claudeDir, 0755)
 	os.WriteFile(filepath.Join(claudeDir, "settings.json"), []byte(`{
-		"env": "ANTHROPIC_API_KEY=sk-ant-api03-realkey123456789abcdef"
-	}`), 0644)
+    "env": {"ANTHROPIC_API_KEY": "sk-ant-api03-realkey123456789abcdef"}
+}`), 0644)
 
 	s := scanner.NewClaudeScanner()
 	result, err := s.Scan(context.Background(), dir)

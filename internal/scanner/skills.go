@@ -22,7 +22,7 @@ func scanSkillDir(path, name string) model.Skill {
 
 func extractFirstLine(content string) string {
 	for _, line := range splitLines(content) {
-		if len(line) > 2 && line[:2] != "--" {
+		if len(line) >= 3 && line[:3] != "---" {
 			return line
 		}
 	}

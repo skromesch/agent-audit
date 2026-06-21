@@ -11,10 +11,10 @@ var secretPatterns = []struct {
 	name    string
 	pattern *regexp.Regexp
 }{
-	{"OpenAI API Key", regexp.MustCompile(`(?i)(OPENAI_API_KEY\s*[=:]\s*)(sk-[a-zA-Z0-9\-_]{20,})`)},
-	{"Anthropic API Key", regexp.MustCompile(`(?i)(ANTHROPIC_API_KEY\s*[=:]\s*)(sk-ant-[a-zA-Z0-9\-_]{20,})`)},
-	{"GitHub Token", regexp.MustCompile(`(?i)(GITHUB_TOKEN\s*[=:]\s*)(gh[ps]_[a-zA-Z0-9]{36,})`)},
-	{"Generic API Key", regexp.MustCompile(`(?i)([a-zA-Z_]{3,}_(?:API_KEY|TOKEN|SECRET|PASSWORD)\s*[=:]\s*)([a-zA-Z0-9\-_]{16,})`)},
+	{"OpenAI API Key", regexp.MustCompile(`(?i)"?(OPENAI_API_KEY)"?\s*[=:]\s*"?(sk-[a-zA-Z0-9\-_]{20,})`)},
+	{"Anthropic API Key", regexp.MustCompile(`(?i)"?(ANTHROPIC_API_KEY)"?\s*[=:]\s*"?(sk-ant-[a-zA-Z0-9\-_]{20,})`)},
+	{"GitHub Token", regexp.MustCompile(`(?i)"?(GITHUB_TOKEN)"?\s*[=:]\s*"?(gh[ps]_[a-zA-Z0-9]{36,})`)},
+	{"Generic API Key", regexp.MustCompile(`(?i)"?([a-zA-Z_]{3,}_(?:API_KEY|TOKEN|SECRET|PASSWORD))"?\s*[=:]\s*"?([a-zA-Z0-9\-_]{16,})`)},
 }
 
 // ScanForSecrets scans content for secret patterns and returns findings.
