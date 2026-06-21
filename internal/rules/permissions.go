@@ -17,6 +17,7 @@ var permChecks = []permCheck{
 	{`"allow": ["*"]`, "Wildcard allow permission — unrestricted tool access", model.SeverityCritical},
 	{`"allow":["*"]`, "Wildcard allow permission — unrestricted tool access", model.SeverityCritical},
 	{"approval_mode: none", "Approval mode disabled — all actions auto-approved", model.SeverityCritical},
+	{`approval = "none"`, "Approval mode disabled — all actions auto-approved", model.SeverityCritical},
 	{"sandbox = false", "Sandbox disabled in agent config", model.SeverityWarning},
 	{"sandbox: false", "Sandbox disabled in agent config", model.SeverityWarning},
 	{"allow_all: true", "allow_all flag set to true", model.SeverityWarning},
