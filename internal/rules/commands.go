@@ -20,7 +20,9 @@ var dangerousPatterns = []struct {
 	{"chmod 777", "world-writable permissions"},
 	{"eval $(", "arbitrary code execution"},
 	{"|bash", "piped shell execution"},
+	{"| bash", "piped shell execution"},
 	{"|sh", "piped shell execution"},
+	{"| sh", "piped shell execution"},
 }
 
 // CheckMCPCommands inspects the command and args of an MCP server for dangerous patterns.
