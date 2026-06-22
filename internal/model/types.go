@@ -26,6 +26,7 @@ type MCPServer struct {
 	Args    []string          `json:"args"`
 	Env     map[string]string `json:"env"`
 	Source  string            `json:"source"`
+	Scope   string            `json:"scope"` // "project" or "global"
 }
 
 type Skill struct {
@@ -33,8 +34,10 @@ type Skill struct {
 	Description string   `json:"description"`
 	Path        string   `json:"path"`
 	EntryPoint  string   `json:"entry_point"`
-	Valid       bool     `json:"valid"`
+	Valid        bool     `json:"valid"`
 	Issues      []string `json:"issues,omitempty"`
+	Agent       string   `json:"agent"` // e.g. "Claude Code"
+	Scope       string   `json:"scope"` // "project" or "global"
 }
 
 type AgentConfig struct {

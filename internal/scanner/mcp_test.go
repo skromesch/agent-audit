@@ -31,8 +31,14 @@ func TestMCPScannerParsesServers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(result.MCPServers) != 2 {
-		t.Errorf("got %d servers, want 2", len(result.MCPServers))
+	found := map[string]bool{}
+	for _, s := range result.MCPServers {
+		found[s.Name] = true
+	}
+	for _, name := range []string{"filesystem", "danger-server"} {
+		if !found[name] {
+			t.Errorf("expected server %q not found in %d servers", name, len(result.MCPServers))
+		}
 	}
 	var dangerFindings, secretFindings int
 	for _, f := range result.Findings {

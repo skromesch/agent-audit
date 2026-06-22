@@ -45,37 +45,23 @@ func TestRenderOverviewNil(t *testing.T) {
 	}
 }
 
-func TestRenderAgents(t *testing.T) {
-	out := renderAgents(sampleResult(), 80, 24)
-	if !strings.Contains(out, "Claude Code") {
-		t.Error("agents view should contain agent name")
-	}
-}
-
-func TestRenderAgentsEmpty(t *testing.T) {
-	r := &model.ScanResult{}
-	out := renderAgents(r, 80, 24)
-	if out == "" {
-		t.Error("empty agents should return non-empty string")
-	}
-}
 
 func TestRenderMCP(t *testing.T) {
-	out := renderMCP(sampleResult(), 80, 24)
+	out := renderMCP(sampleResult(), 80, 24, 0, 0, 0)
 	if !strings.Contains(out, "filesystem") {
 		t.Error("mcp view should contain server name")
 	}
 }
 
 func TestRenderMCPEmpty(t *testing.T) {
-	out := renderMCP(&model.ScanResult{}, 80, 24)
+	out := renderMCP(&model.ScanResult{}, 80, 24, 0, 0, 0)
 	if out == "" {
 		t.Error("empty mcp should return non-empty string")
 	}
 }
 
 func TestRenderSkills(t *testing.T) {
-	out := renderSkills(sampleResult(), 80, 24)
+	out := renderSkills(sampleResult(), 80, 200, 0, 0, 0)
 	if !strings.Contains(out, "my-skill") {
 		t.Error("skills view should contain skill name")
 	}
@@ -85,7 +71,7 @@ func TestRenderSkills(t *testing.T) {
 }
 
 func TestRenderSkillsEmpty(t *testing.T) {
-	out := renderSkills(&model.ScanResult{}, 80, 24)
+	out := renderSkills(&model.ScanResult{}, 80, 24, 0, 0, 0)
 	if out == "" {
 		t.Error("empty skills should return non-empty string")
 	}
@@ -108,19 +94,6 @@ func TestRenderSecurityEmpty(t *testing.T) {
 	}
 }
 
-func TestRenderFiles(t *testing.T) {
-	out := renderFiles(sampleResult(), 80, 24)
-	if !strings.Contains(out, "/test/.claude/settings.json") {
-		t.Error("files view should contain config file path")
-	}
-}
-
-func TestRenderFilesEmpty(t *testing.T) {
-	out := renderFiles(&model.ScanResult{}, 80, 24)
-	if out == "" {
-		t.Error("empty files should return non-empty string")
-	}
-}
 
 func TestRenderTabBar(t *testing.T) {
 	bar := renderTabBar(0, 120)
@@ -199,7 +172,7 @@ func TestAppViewWithSize(t *testing.T) {
 
 func TestRenderActiveTabAllTabs(t *testing.T) {
 	app := *NewApp(sampleResult())
-	for i := 0; i < 6; i++ {
+	for i := 0; i < len(tabs); i++ {
 		app.activeTab = i
 		out := app.renderActiveTab(80, 24)
 		if out == "" {

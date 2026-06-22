@@ -1,0 +1,30 @@
+[tools]
+go = "1.24"
+golangci-lint = "latest"
+
+[tasks.build]
+description = "Build the agent-audit binary"
+run = "go build -o agent-audit ./cmd/agent-audit"
+
+[tasks.install]
+description = "Install agent-audit to GOPATH/bin"
+run = "go install ./cmd/agent-audit"
+
+[tasks.test]
+description = "Run tests with race detector and coverage"
+run = [
+  "go test -race -coverprofile=coverage.out ./...",
+  "go tool cover -func=coverage.out | grep total",
+]
+
+[tasks.lint]
+description = "Run golangci-lint"
+run = "golangci-lint run ./..."
+
+[tasks.bench]
+description = "Run benchmarks"
+run = "go test -bench=. -benchmem ./..."
+
+[tasks.clean]
+description = "Remove build artifacts"
+run = "rm -f agent-audit coverage.out report.json report.md report.html"

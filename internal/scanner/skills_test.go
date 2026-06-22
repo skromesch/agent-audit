@@ -6,8 +6,18 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/skromesch/agent-audit/internal/model"
 	"github.com/skromesch/agent-audit/internal/scanner"
 )
+
+func findSkill(skills []model.Skill, name string) *model.Skill {
+	for i := range skills {
+		if skills[i].Name == name {
+			return &skills[i]
+		}
+	}
+	return nil
+}
 
 func TestSkillsScannerValidSkill(t *testing.T) {
 	dir := t.TempDir()
@@ -26,17 +36,18 @@ Instructions here.
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(result.Skills) != 1 {
-		t.Fatalf("got %d skills, want 1", len(result.Skills))
+
+	found := findSkill(result.Skills, "my-skill")
+	if found == nil {
+		t.Fatalf("skill 'my-skill' not found in %d skills", len(result.Skills))
 	}
-	if !result.Skills[0].Valid {
+	if !found.Valid {
 		t.Error("expected valid skill")
 	}
 }
 
 func TestSkillsScannerInvalidSkill(t *testing.T) {
 	dir := t.TempDir()
-	// Skill dir without skill.md
 	skillDir := filepath.Join(dir, "skills", "broken-skill")
 	os.MkdirAll(skillDir, 0755)
 	os.WriteFile(filepath.Join(skillDir, "README.md"), []byte("no skill.md here"), 0644)
@@ -46,13 +57,15 @@ func TestSkillsScannerInvalidSkill(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(result.Skills) != 1 {
-		t.Fatalf("got %d skills, want 1", len(result.Skills))
+
+	found := findSkill(result.Skills, "broken-skill")
+	if found == nil {
+		t.Fatalf("skill 'broken-skill' not found in %d skills", len(result.Skills))
 	}
-	if result.Skills[0].Valid {
+	if found.Valid {
 		t.Error("expected invalid skill")
 	}
-	if len(result.Skills[0].Issues) == 0 {
+	if len(found.Issues) == 0 {
 		t.Error("expected issues on invalid skill")
 	}
 }

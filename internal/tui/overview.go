@@ -2,8 +2,8 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/skromesch/agent-audit/internal/model"
 )
 
@@ -12,39 +12,95 @@ func renderOverview(result *model.ScanResult, width, _ int) string {
 		return StyleMuted.Render("Scanning...")
 	}
 
-	critStr := fmt.Sprintf("%d", result.CriticalCount())
-	warnStr := fmt.Sprintf("%d", result.WarningCount())
-	if result.CriticalCount() > 0 {
-		critStr = StyleCritical.Render(critStr)
-	}
-	if result.WarningCount() > 0 {
-		warnStr = StyleWarning.Render(warnStr)
+	inner := width - 6
+	var sb strings.Builder
+
+	sb.WriteString(StyleTitle.Render("agent-audit") + "\n")
+	sb.WriteString(StyleMuted.Render("Root: "+result.Root) + "\n\n")
+
+	if len(result.Agents) == 0 {
+		sb.WriteString(StyleMuted.Render("No agents detected.") + "\n")
+		return StyleBox.Width(width - 4).Render(strings.TrimRight(sb.String(), "\n"))
 	}
 
-	summary := lipgloss.JoinVertical(lipgloss.Left,
-		StyleTitle.Render("agent-audit"),
-		StyleMuted.Render("Root: "+result.Root),
-		"",
-		StyleHeader.Render("Detected Tools"),
-	)
+	// Build a set of config files per agent for MCP matching
+	agentFiles := map[string]map[string]bool{}
+	for _, a := range result.Agents {
+		set := map[string]bool{}
+		for _, f := range a.ConfigFiles {
+			set[f] = true
+		}
+		agentFiles[a.Tool] = set
+	}
 
 	for _, a := range result.Agents {
-		summary += "\n  " + StyleOK.Render("✓") + "  " + a.Tool
-	}
-	if len(result.Agents) == 0 {
-		summary += "\n  " + StyleMuted.Render("none detected")
+		sb.WriteString(divider(a.Tool, inner) + "\n\n")
+
+		// Skills
+		skillCount, projectSkills, globalSkills := 0, 0, 0
+		for _, sk := range result.Skills {
+			if sk.Agent == a.Tool {
+				skillCount++
+				if sk.Scope == "project" {
+					projectSkills++
+				} else {
+					globalSkills++
+				}
+			}
+		}
+
+		// MCP servers whose source file belongs to this agent
+		mcpCount := 0
+		for _, m := range result.MCPServers {
+			if agentFiles[a.Tool][m.Source] {
+				mcpCount++
+			}
+		}
+
+		// Findings
+		critCount, warnCount := 0, 0
+		for _, f := range result.Findings {
+			if f.Tool == a.Tool {
+				if f.Severity == model.SeverityCritical {
+					critCount++
+				} else if f.Severity == model.SeverityWarning {
+					warnCount++
+				}
+			}
+		}
+
+		// Stats block
+		detail := fmt.Sprintf("(%d project, %d global)", projectSkills, globalSkills)
+		sb.WriteString(fmt.Sprintf("  %-16s %s  %s\n",
+			"Skills",
+			StyleOK.Render(fmt.Sprintf("%d", skillCount)),
+			StyleMuted.Render(detail),
+		))
+		sb.WriteString(fmt.Sprintf("  %-16s %s\n", "MCP Servers", StyleOK.Render(fmt.Sprintf("%d", mcpCount))))
+		for k, v := range a.Settings {
+			sb.WriteString(fmt.Sprintf("  %-16s %s\n", k, StyleMuted.Render(v)))
+		}
+		sb.WriteString(fmt.Sprintf("  %-16s %s\n", "Critical", StyleCritical.Render(fmt.Sprintf("%d", critCount))))
+		sb.WriteString(fmt.Sprintf("  %-16s %s\n", "Warnings", StyleWarning.Render(fmt.Sprintf("%d", warnCount))))
+
+		// Config files
+		if len(a.ConfigFiles) > 0 {
+			sb.WriteString("\n  " + StyleMuted.Render("Config files:") + "\n")
+			for _, f := range a.ConfigFiles {
+				sb.WriteString(fmt.Sprintf("    %s\n", f))
+			}
+		}
+		sb.WriteString("\n")
 	}
 
-	stats := lipgloss.JoinVertical(lipgloss.Left,
-		"",
-		StyleHeader.Render("Statistics"),
-		fmt.Sprintf("  MCP Servers   %s", StyleOK.Render(fmt.Sprintf("%d", len(result.MCPServers)))),
-		fmt.Sprintf("  Skills        %s", StyleOK.Render(fmt.Sprintf("%d", len(result.Skills)))),
-		fmt.Sprintf("  Config Files  %s", StyleMuted.Render(fmt.Sprintf("%d", len(result.ConfigFiles)))),
-		fmt.Sprintf("  Critical      %s", critStr),
-		fmt.Sprintf("  Warnings      %s", warnStr),
-	)
+	return StyleBox.Width(width - 4).Render(strings.TrimRight(sb.String(), "\n"))
+}
 
-	content := lipgloss.JoinVertical(lipgloss.Left, summary, stats)
-	return StyleBox.Width(width - 4).Render(content)
+func divider(label string, width int) string {
+	prefix := "── " + label + " "
+	dashes := width - len(prefix)
+	if dashes < 2 {
+		dashes = 2
+	}
+	return StyleHeader.Render(prefix + strings.Repeat("─", dashes))
 }

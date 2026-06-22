@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="agent-audit (HTML)" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="agent-audit" />
+    <working_directory value="$PROJECT_DIR$" />
+    <parameters value="-html ." />
+    <kind value="PACKAGE" />
+    <package value="github.com/skromesch/agent-audit/cmd/agent-audit" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$" />
+    <method v="2" />
+  </configuration>
+</component>

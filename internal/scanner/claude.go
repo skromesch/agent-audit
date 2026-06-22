@@ -61,19 +61,6 @@ func (s *ClaudeScanner) Scan(ctx context.Context, root string) (*ScannerResult, 
 		}
 	}
 
-	// Skills discovery
-	skillsDir := filepath.Join(root, ".claude", "skills")
-	if entries, err := os.ReadDir(skillsDir); err == nil {
-		for _, e := range entries {
-			if e.IsDir() {
-				skillPath := filepath.Join(skillsDir, e.Name())
-				skill := scanSkillDir(skillPath, e.Name())
-				result.Skills = append(result.Skills, skill)
-				result.Files = append(result.Files, skillPath)
-			}
-		}
-	}
-
 	if found {
 		result.Agent = cfg
 	}
