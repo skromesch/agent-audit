@@ -18,6 +18,7 @@ type App struct {
 	activeTab         int
 	width             int
 	height            int
+	overviewScroll    int
 	skillsCursor      int
 	skillsFocus       int // 0=left list, 1=right detail
 	skillsRightScroll int
@@ -50,6 +51,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.mcpFocus = 1
 			default:
 				a.activeTab = (a.activeTab + 1) % len(tabs)
+				a.overviewScroll = 0
 				a.skillsCursor, a.skillsFocus, a.skillsRightScroll = 0, 0, 0
 				a.mcpCursor, a.mcpFocus, a.mcpRightScroll = 0, 0, 0
 			}
@@ -61,6 +63,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.mcpFocus = 0
 			default:
 				a.activeTab = (a.activeTab - 1 + len(tabs)) % len(tabs)
+				a.overviewScroll = 0
 				a.skillsCursor, a.skillsFocus, a.skillsRightScroll = 0, 0, 0
 				a.mcpCursor, a.mcpFocus, a.mcpRightScroll = 0, 0, 0
 			}
@@ -80,6 +83,10 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "up", "k":
 			switch a.activeTab {
+			case 0:
+				if a.overviewScroll > 0 {
+					a.overviewScroll--
+				}
 			case 2:
 				if a.skillsFocus == 1 {
 					if a.skillsRightScroll > 0 {
@@ -101,6 +108,8 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "down", "j":
 			switch a.activeTab {
+			case 0:
+				a.overviewScroll++
 			case 2:
 				if a.skillsFocus == 1 {
 					a.skillsRightScroll++
@@ -141,6 +150,8 @@ func (a App) View() string {
 
 	navHint := ""
 	switch a.activeTab {
+	case 0:
+		navHint = "  ↑↓:scroll"
 	case 2:
 		if a.skillsFocus == 0 {
 			navHint = "  ↑↓:select  →/enter:detail"
@@ -165,7 +176,7 @@ func (a App) View() string {
 func (a App) renderActiveTab(width, height int) string {
 	switch a.activeTab {
 	case 0:
-		return renderOverview(a.result, width, height)
+		return renderOverview(a.result, width, height, a.overviewScroll)
 	case 1:
 		return renderMCP(a.result, width, height, a.mcpCursor, a.mcpFocus, a.mcpRightScroll)
 	case 2:

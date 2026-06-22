@@ -32,14 +32,14 @@ func sampleResult() *model.ScanResult {
 }
 
 func TestRenderOverview(t *testing.T) {
-	out := renderOverview(sampleResult(), 80, 24)
+	out := renderOverview(sampleResult(), 80, 24, 0)
 	if !strings.Contains(out, "Claude Code") {
 		t.Error("overview should contain agent name")
 	}
 }
 
 func TestRenderOverviewNil(t *testing.T) {
-	out := renderOverview(nil, 80, 24)
+	out := renderOverview(nil, 80, 24, 0)
 	if out == "" {
 		t.Error("nil result should return non-empty string")
 	}

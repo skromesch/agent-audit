@@ -7,7 +7,7 @@ import (
 	"github.com/skromesch/agent-audit/internal/model"
 )
 
-func renderOverview(result *model.ScanResult, width, _ int) string {
+func renderOverview(result *model.ScanResult, width, height, scroll int) string {
 	if result == nil {
 		return StyleMuted.Render("Scanning...")
 	}
@@ -22,6 +22,7 @@ func renderOverview(result *model.ScanResult, width, _ int) string {
 		sb.WriteString(StyleMuted.Render("No agents detected.") + "\n")
 		return StyleBox.Width(width - 4).Render(strings.TrimRight(sb.String(), "\n"))
 	}
+
 
 	// Build a set of config files per agent for MCP matching
 	agentFiles := map[string]map[string]bool{}
@@ -93,7 +94,25 @@ func renderOverview(result *model.ScanResult, width, _ int) string {
 		sb.WriteString("\n")
 	}
 
-	return StyleBox.Width(width - 4).Render(strings.TrimRight(sb.String(), "\n"))
+	content := strings.TrimRight(sb.String(), "\n")
+	lines := strings.Split(content, "\n")
+
+	// Clip to viewport: box borders take 2 rows.
+	available := height - 2
+	if available < 1 {
+		available = 1
+	}
+	if scroll+available > len(lines) {
+		scroll = len(lines) - available
+	}
+	if scroll < 0 {
+		scroll = 0
+	}
+	end := scroll + available
+	if end > len(lines) {
+		end = len(lines)
+	}
+	return StyleBox.Width(width - 4).Render(strings.Join(lines[scroll:end], "\n"))
 }
 
 func divider(label string, width int) string {
