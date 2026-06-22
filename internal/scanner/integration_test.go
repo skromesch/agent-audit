@@ -24,6 +24,8 @@ func buildOrchestrator() *scanner.Orchestrator {
 		scanner.NewAiderScanner(),
 		scanner.NewMCPScanner(),
 		scanner.NewSkillsScanner(),
+		scanner.NewOpenCodeScanner(),
+		scanner.NewPiScanner(),
 	})
 }
 
@@ -93,6 +95,8 @@ func TestIntegrationAgentNames(t *testing.T) {
 		"Cursor":       false,
 		"Continue.dev": false,
 		"Aider":        false,
+		"OpenCode":     false,
+		"Pi":           false,
 	}
 	for _, a := range result.Agents {
 		wantTools[a.Tool] = true
