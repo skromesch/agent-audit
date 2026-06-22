@@ -70,19 +70,14 @@ func TestPiScannerIncludesAgentsMd(t *testing.T) {
 }
 
 func TestPiScannerNoFalsePositiveOnAgentsMdAlone(t *testing.T) {
-	dir := t.TempDir()
-	// Only AGENTS.md — no Pi-specific files in project directory
-	os.WriteFile(filepath.Join(dir, "AGENTS.md"), []byte("# Codex instructions"), 0644)
-
-	// Temporarily hide global .pi directory to test project-level only detection
-	home, _ := os.UserHomeDir()
-	piDir := filepath.Join(home, ".pi")
-	piDirBackup := piDir + ".bak"
-
-	if info, err := os.Stat(piDir); err == nil && info.IsDir() {
-		os.Rename(piDir, piDirBackup)
-		defer os.Rename(piDirBackup, piDir)
+	if home, err := os.UserHomeDir(); err == nil {
+		if _, err := os.Stat(filepath.Join(home, ".pi", "agent")); err == nil {
+			t.Skip("skipping: ~/.pi/agent exists on this machine")
+		}
 	}
+
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "AGENTS.md"), []byte("# Codex instructions"), 0644)
 
 	s := scanner.NewPiScanner()
 	result, err := s.Scan(context.Background(), dir)
