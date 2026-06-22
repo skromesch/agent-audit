@@ -25,7 +25,7 @@ Audit AI coding agent configurations in your project — detect tools, MCP serve
 
 ## Features
 
-- **7 ecosystems** — Claude Code, OpenCode, Pi, Codex, Cursor, Continue.dev, Aider
+- **8 ecosystems** — Claude Code, OpenCode, Pi, Codex, Cursor, Continue.dev, Aider, Gemini CLI
 - **MCP server audit** — lists all Model Context Protocol servers with command and source
 - **Skills discovery** — finds and validates Claude Code and Pi skill packages
 - **Secret detection** — API keys and tokens detected and masked in all output
@@ -94,6 +94,7 @@ agent-audit --html       # writes report.html
 | **Cursor** | `.cursor/rules/`, `.cursor/settings.json` |
 | **Continue.dev** | `.continue/config.yaml` |
 | **Aider** | `.aider.conf.yml`, `.aider*` |
+| **Gemini CLI** | `GEMINI.md`, `~/.gemini/settings.json` |
 
 All scanners also check for MCP server definitions in `.mcp.json` wherever present.
 
