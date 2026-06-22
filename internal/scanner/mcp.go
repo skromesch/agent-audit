@@ -63,6 +63,7 @@ func (s *MCPScanner) Scan(ctx context.Context, root string) (*ScannerResult, err
 			filepath.Join(home, ".cursor", "mcp.json"),
 			filepath.Join(home, ".codex", "mcp.json"),
 			filepath.Join(home, ".codex", "config.toml"),
+			filepath.Join(home, ".gemini", "settings.json"),
 		)
 	}
 

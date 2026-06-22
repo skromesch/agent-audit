@@ -43,6 +43,7 @@ func main() {
 		scanner.NewSkillsScanner(),
 		scanner.NewOpenCodeScanner(),
 		scanner.NewPiScanner(),
+		scanner.NewGeminiScanner(),
 	})
 
 	result, err := orch.Run(context.Background(), root)

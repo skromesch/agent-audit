@@ -7,6 +7,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.1.0] - 2026-06-22
+
+### Added
+
+- **Gemini CLI scanner** — detects `GEMINI.md` (project level) and `~/.gemini/settings.json` (global); extracts model setting, scans for secrets and permission misconfigurations
+- **Gemini CLI MCP support** — `~/.gemini/settings.json` added to MCP scan locations so Gemini-configured MCP servers appear in the MCP tab
+
+---
+
 ## [1.0.0] - 2026-06-22
 
 ### Added
@@ -27,4 +36,5 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **CI-friendly** — auto-falls back to JSON output when stdin is not a TTY
 - **Cross-platform** — Linux, macOS, Windows
 
+[1.1.0]: https://github.com/skromesch/agent-audit/releases/tag/v1.1.0
 [1.0.0]: https://github.com/skromesch/agent-audit/releases/tag/v1.0.0
