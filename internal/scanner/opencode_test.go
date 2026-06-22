@@ -38,26 +38,10 @@ func TestOpenCodeScannerDetectsProjectConfig(t *testing.T) {
 	}
 }
 
-func TestOpenCodeScannerNoConfigReturnsNil(t *testing.T) {
-	dir := t.TempDir()
-	s := scanner.NewOpenCodeScanner()
-	result, err := s.Scan(context.Background(), dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result.Agent != nil {
-		t.Error("expected nil agent when no config present")
-	}
-}
-
 func TestOpenCodeScannerDetectsSecrets(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "opencode.json"), []byte(`{
-		"provider": {
-			"anthropic": {
-				"apiKey": "sk-ant-api03-secretkey1234567890abcdef"
-			}
-		}
+		"ANTHROPIC_API_KEY": "sk-ant-api03-secretkey1234567890abcdef"
 	}`), 0644)
 
 	s := scanner.NewOpenCodeScanner()

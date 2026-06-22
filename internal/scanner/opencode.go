@@ -49,7 +49,9 @@ func (s *OpenCodeScanner) Scan(ctx context.Context, root string) (*ScannerResult
 			if m, ok := raw["model"]; ok {
 				var modelVal string
 				if json.Unmarshal(m, &modelVal) == nil {
-					cfg.Settings["model"] = modelVal
+					if _, exists := cfg.Settings["model"]; !exists {
+						cfg.Settings["model"] = modelVal
+					}
 				}
 			}
 		}
