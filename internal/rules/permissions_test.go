@@ -21,6 +21,31 @@ func TestCheckPermissions(t *testing.T) {
 			wantSev:  model.SeverityCritical,
 		},
 		{
+			name: "wildcard allow pretty-printed",
+			content: `{
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "*"
+    ],
+    "deny": []
+  }
+}`,
+			wantHits: 1,
+			wantSev:  model.SeverityCritical,
+		},
+		{
+			name: "allow without wildcard",
+			content: `{
+  "permissions": {
+    "allow": [
+      "Bash(ls)"
+    ]
+  }
+}`,
+			wantHits: 0,
+		},
+		{
 			name:     "sandbox disabled",
 			content:  `sandbox = false`,
 			wantHits: 1,

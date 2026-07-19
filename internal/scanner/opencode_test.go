@@ -38,6 +38,52 @@ func TestOpenCodeScannerDetectsProjectConfig(t *testing.T) {
 	}
 }
 
+func TestOpenCodeScannerDetectsAuthJSONSecret(t *testing.T) {
+	dir := t.TempDir()
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	authDir := filepath.Join(home, ".local", "share", "opencode")
+	os.MkdirAll(authDir, 0755)
+	os.WriteFile(filepath.Join(authDir, "auth.json"), []byte(
+		`{"ANTHROPIC_API_KEY": "sk-ant-api03-secretkey1234567890abcdef"}`), 0644)
+
+	s := scanner.NewOpenCodeScanner()
+	result, err := s.Scan(context.Background(), dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var secretFindings int
+	for _, f := range result.Findings {
+		if f.Category == "secrets" {
+			secretFindings++
+		}
+	}
+	if secretFindings == 0 {
+		t.Error("expected secret finding from ~/.local/share/opencode/auth.json")
+	}
+}
+
+func TestOpenCodeScannerDetectsJSONCVariant(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", t.TempDir())
+	os.WriteFile(filepath.Join(dir, "opencode.jsonc"), []byte(`{
+		"model": "anthropic/claude-sonnet-4-5"
+	}`), 0644)
+
+	s := scanner.NewOpenCodeScanner()
+	result, err := s.Scan(context.Background(), dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Agent == nil {
+		t.Fatal("expected agent config, got nil")
+	}
+	if len(result.Files) < 1 {
+		t.Error("expected opencode.jsonc to be picked up")
+	}
+}
+
 func TestOpenCodeScannerDetectsSecrets(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "opencode.json"), []byte(`{

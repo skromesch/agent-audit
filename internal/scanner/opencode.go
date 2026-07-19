@@ -21,10 +21,13 @@ func (s *OpenCodeScanner) Scan(ctx context.Context, root string) (*ScannerResult
 
 	candidates := []string{
 		filepath.Join(root, "opencode.json"),
+		filepath.Join(root, "opencode.jsonc"),
 	}
 	if home, err := os.UserHomeDir(); err == nil {
 		candidates = append(candidates,
 			filepath.Join(home, ".config", "opencode", "opencode.json"),
+			filepath.Join(home, ".config", "opencode", "opencode.jsonc"),
+			filepath.Join(home, ".local", "share", "opencode", "auth.json"),
 		)
 	}
 

@@ -87,14 +87,14 @@ agent-audit --html       # writes report.html
 
 | Tool | Config files scanned |
 |------|---------------------|
-| **Claude Code** | `CLAUDE.md`, `.claude/settings.json`, `.claude/skills/`, `.mcp.json`, `~/.claude/settings.json` |
-| **OpenCode** | `opencode.json`, `~/.config/opencode/opencode.json` |
-| **Pi** | `SYSTEM.md`, `models.json`, `AGENTS.md`, `~/.pi/agent/` |
-| **Codex** | `AGENTS.md`, `.codex/config.toml`, `~/.codex/config.toml` |
-| **Cursor** | `.cursor/rules/`, `.cursor/settings.json` |
-| **Continue.dev** | `.continue/config.yaml` |
-| **Aider** | `.aider.conf.yml`, `.aider*` |
-| **Gemini CLI** | `GEMINI.md`, `~/.gemini/settings.json` |
+| **Claude Code** | `CLAUDE.md`, `.claude/settings.json`, `.claude/settings.local.json`, `.claude/skills/`, `.claude/agents/`, `~/.claude/agents/`, `.mcp.json`, `~/.claude/settings.json`, hook commands |
+| **OpenCode** | `opencode.json`, `opencode.jsonc`, `~/.config/opencode/opencode.json(c)`, `~/.local/share/opencode/auth.json` |
+| **Pi** | `SYSTEM.md`, `models.json`, `AGENTS.md`, `.pi/settings.json`, `~/.pi/agent/`, `~/.pi/agent/settings.json` |
+| **Codex** | `AGENTS.md`, `.codex/config.toml`, `~/.codex/config.toml`, `~/.codex/auth.json`, `~/.codex/*.config.toml` (profiles) |
+| **Cursor** | `.cursor/rules/`, `.cursor/settings.json`, legacy `.cursorrules` |
+| **Continue.dev** | `.continue/config.yaml` (including its `mcpServers` block) |
+| **Aider** | `.aider.conf.yml`, `.aider*` (project and home directory), `.env` |
+| **Gemini CLI** | `GEMINI.md`, `.gemini/settings.json`, `~/.gemini/settings.json` |
 
 All scanners also check for MCP server definitions in `.mcp.json` wherever present.
 

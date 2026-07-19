@@ -21,6 +21,7 @@ func (s *GeminiScanner) Scan(ctx context.Context, root string) (*ScannerResult, 
 
 	candidates := []string{
 		filepath.Join(root, "GEMINI.md"),
+		filepath.Join(root, ".gemini", "settings.json"),
 	}
 	if home, err := os.UserHomeDir(); err == nil {
 		candidates = append(candidates,

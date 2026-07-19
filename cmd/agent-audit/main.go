@@ -11,8 +11,12 @@ import (
 	"github.com/skromesch/agent-audit/internal/tui"
 )
 
+// version is set at build time via -ldflags "-X main.version=...".
+var version = "dev"
+
 func main() {
 	var (
+		versionFlag = flag.Bool("version", false, "print version and exit")
 		jsonOut     = flag.Bool("json", false, "write report.json and exit")
 		markdownOut = flag.Bool("markdown", false, "write report.md and exit")
 		htmlOut     = flag.Bool("html", false, "write report.html and exit")
@@ -22,6 +26,13 @@ func main() {
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+
+	if *versionFlag {
+		fmt.Println("agent-audit " + version)
+		return
+	}
+
+	tui.Version = version
 
 	root := "."
 	if flag.NArg() > 0 {

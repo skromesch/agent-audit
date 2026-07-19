@@ -8,10 +8,18 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// Version is set at build time via -ldflags "-X .../internal/tui.Version=...".
+// When empty (e.g. a plain `go build`), renderAbout falls back to the Go
+// module version (populated by `go install pkg@version`), then "(dev)".
+var Version = ""
+
 func renderAbout(width, height int) string {
-	version := "(dev)"
-	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
-		version = info.Main.Version
+	version := Version
+	if version == "" {
+		version = "(dev)"
+		if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+			version = info.Main.Version
+		}
 	}
 
 	toolInfo := StyleBox.Width(width - 4).Render(

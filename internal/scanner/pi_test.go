@@ -89,6 +89,68 @@ func TestPiScannerNoFalsePositiveOnAgentsMdAlone(t *testing.T) {
 	}
 }
 
+func TestPiScannerReadsProjectSettingsJSON(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "SYSTEM.md"), []byte("prompt"), 0644)
+	piDir := filepath.Join(dir, ".pi")
+	os.MkdirAll(piDir, 0755)
+	os.WriteFile(filepath.Join(piDir, "settings.json"), []byte(`{
+		"ANTHROPIC_API_KEY": "sk-ant-api03-secretkey1234567890abcdef"
+	}`), 0644)
+
+	s := scanner.NewPiScanner()
+	result, err := s.Scan(context.Background(), dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var found bool
+	for _, f := range result.Files {
+		if filepath.Base(f) == "settings.json" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected .pi/settings.json to be scanned")
+	}
+	var secretFindings int
+	for _, f := range result.Findings {
+		if f.Category == "secrets" {
+			secretFindings++
+		}
+	}
+	if secretFindings == 0 {
+		t.Error("expected secret finding in .pi/settings.json")
+	}
+}
+
+func TestPiScannerReadsGlobalSettingsJSON(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "SYSTEM.md"), []byte("prompt"), 0644)
+
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	globalPiDir := filepath.Join(home, ".pi", "agent")
+	os.MkdirAll(globalPiDir, 0755)
+	os.WriteFile(filepath.Join(globalPiDir, "settings.json"), []byte(`{
+		"ANTHROPIC_API_KEY": "sk-ant-api03-secretkey1234567890abcdef"
+	}`), 0644)
+
+	s := scanner.NewPiScanner()
+	result, err := s.Scan(context.Background(), dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var secretFindings int
+	for _, f := range result.Findings {
+		if f.Category == "secrets" {
+			secretFindings++
+		}
+	}
+	if secretFindings == 0 {
+		t.Error("expected secret finding in ~/.pi/agent/settings.json")
+	}
+}
+
 func TestPiScannerDetectsSecrets(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "SYSTEM.md"), []byte("prompt"), 0644)

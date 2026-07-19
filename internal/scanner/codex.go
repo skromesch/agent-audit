@@ -79,8 +79,13 @@ func (s *CodexScanner) Scan(ctx context.Context, root string) (*ScannerResult, e
 	if home, err := os.UserHomeDir(); err == nil {
 		candidates = append(candidates,
 			filepath.Join(home, ".codex", "config.toml"),
+			filepath.Join(home, ".codex", "auth.json"),
 			filepath.Join("/etc", "codex", "config.toml"),
 		)
+		// Per-profile overrides: $CODEX_HOME/<profile>.config.toml
+		if matches, err := filepath.Glob(filepath.Join(home, ".codex", "*.config.toml")); err == nil {
+			candidates = append(candidates, matches...)
+		}
 	} else {
 		candidates = append(candidates, filepath.Join("/etc", "codex", "config.toml"))
 	}

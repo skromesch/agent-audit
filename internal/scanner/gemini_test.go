@@ -57,6 +57,29 @@ func TestGeminiScannerDetectsSecrets(t *testing.T) {
 	}
 }
 
+func TestGeminiScannerDetectsProjectSettingsJSON(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", t.TempDir())
+
+	geminiDir := filepath.Join(dir, ".gemini")
+	os.MkdirAll(geminiDir, 0755)
+	os.WriteFile(filepath.Join(geminiDir, "settings.json"), []byte(`{
+		"model": "gemini-3-pro"
+	}`), 0644)
+
+	s := scanner.NewGeminiScanner()
+	result, err := s.Scan(context.Background(), dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Agent == nil {
+		t.Fatal("expected agent config, got nil")
+	}
+	if result.Agent.Settings["model"] != "gemini-3-pro" {
+		t.Errorf("model = %q, want %q", result.Agent.Settings["model"], "gemini-3-pro")
+	}
+}
+
 func TestGeminiScannerNoDetectionWithoutFiles(t *testing.T) {
 	dir := t.TempDir()
 

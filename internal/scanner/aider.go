@@ -61,35 +61,56 @@ func (s *AiderScanner) Scan(ctx context.Context, root string) (*ScannerResult, e
 	cfg := &model.AgentConfig{Tool: "Aider", Settings: map[string]string{}}
 	found := false
 
-	entries, err := os.ReadDir(root)
-	if err != nil {
-		return result, nil
-	}
-	for _, e := range entries {
-		if e.IsDir() {
-			continue
-		}
-		name := e.Name()
-		if !strings.HasPrefix(name, ".aider") {
-			continue
-		}
-		path := filepath.Join(root, name)
-		data, err := os.ReadFile(path)
+	scanDotAiderFiles := func(dir string) {
+		entries, err := os.ReadDir(dir)
 		if err != nil {
-			continue
+			return
 		}
-		found = true
-		result.Files = append(result.Files, path)
-		cfg.ConfigFiles = append(cfg.ConfigFiles, path)
-		content := string(data)
-		result.Findings = append(result.Findings, rules.ScanForSecrets(path, content)...)
+		for _, e := range entries {
+			if e.IsDir() {
+				continue
+			}
+			name := e.Name()
+			if !strings.HasPrefix(name, ".aider") {
+				continue
+			}
+			path := filepath.Join(dir, name)
+			data, err := os.ReadFile(path)
+			if err != nil {
+				continue
+			}
+			found = true
+			result.Files = append(result.Files, path)
+			cfg.ConfigFiles = append(cfg.ConfigFiles, path)
+			content := string(data)
+			result.Findings = append(result.Findings, rules.ScanForSecrets(path, content)...)
 
-		if strings.HasSuffix(name, ".yml") || strings.HasSuffix(name, ".yaml") {
-			kv := parseAiderYAML(content)
-			if m, ok := kv["model"]; ok {
-				cfg.Settings["model"] = m
+			if strings.HasSuffix(name, ".yml") || strings.HasSuffix(name, ".yaml") {
+				kv := parseAiderYAML(content)
+				if m, ok := kv["model"]; ok {
+					// Home config is scanned first; the project-root config
+					// (scanned later) takes priority, matching aider's own
+					// home < git-root < cwd config precedence.
+					cfg.Settings["model"] = m
+				}
 			}
 		}
+	}
+
+	// Aider looks for .aider* config files in the current directory and the
+	// home directory (loaded in that order, home first, current dir wins on conflict).
+	if home, err := os.UserHomeDir(); err == nil {
+		scanDotAiderFiles(home)
+	}
+	scanDotAiderFiles(root)
+
+	// .env defaults to the git root and can hold AIDER_* / provider API keys.
+	envPath := filepath.Join(root, ".env")
+	if data, err := os.ReadFile(envPath); err == nil {
+		found = true
+		result.Files = append(result.Files, envPath)
+		cfg.ConfigFiles = append(cfg.ConfigFiles, envPath)
+		result.Findings = append(result.Findings, rules.ScanForSecrets(envPath, string(data))...)
 	}
 
 	if found {

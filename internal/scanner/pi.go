@@ -28,10 +28,15 @@ func (s *PiScanner) Scan(ctx context.Context, root string) (*ScannerResult, erro
 	// AGENTS.md is shared with Codex; include it but don't use it for detection.
 	agentsMd := filepath.Join(root, "AGENTS.md")
 
+	// Project-level settings file; can hold custom-provider apiKey values.
+	projectSettings := filepath.Join(root, ".pi", "settings.json")
+
 	// Global Pi directory also counts as a Pi-specific marker.
 	globalPiDir := ""
+	globalSettings := ""
 	if home, err := os.UserHomeDir(); err == nil {
 		globalPiDir = filepath.Join(home, ".pi", "agent")
+		globalSettings = filepath.Join(globalPiDir, "settings.json")
 	}
 
 	cfg := &model.AgentConfig{Tool: "Pi", Settings: map[string]string{}}
@@ -70,6 +75,11 @@ func (s *PiScanner) Scan(ctx context.Context, root string) (*ScannerResult, erro
 		}
 	}
 
+	// A project-level .pi/settings.json is itself a Pi-specific marker.
+	if _, err := os.Stat(projectSettings); err == nil {
+		piDetected = true
+	}
+
 	if !piDetected {
 		return result, nil
 	}
@@ -79,6 +89,20 @@ func (s *PiScanner) Scan(ctx context.Context, root string) (*ScannerResult, erro
 		result.Files = append(result.Files, agentsMd)
 		cfg.ConfigFiles = append(cfg.ConfigFiles, agentsMd)
 		result.Findings = append(result.Findings, rules.ScanForSecrets(agentsMd, string(data))...)
+	}
+
+	// Project and global settings.json can embed custom-provider apiKey values in the clear.
+	for _, path := range []string{projectSettings, globalSettings} {
+		if path == "" {
+			continue
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		result.Files = append(result.Files, path)
+		cfg.ConfigFiles = append(cfg.ConfigFiles, path)
+		result.Findings = append(result.Findings, rules.ScanForSecrets(path, string(data))...)
 	}
 
 	result.Agent = cfg

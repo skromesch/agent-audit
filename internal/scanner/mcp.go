@@ -53,7 +53,7 @@ func (s *MCPScanner) Scan(ctx context.Context, root string) (*ScannerResult, err
 		filepath.Join(root, ".codex", "mcp.json"),
 		filepath.Join(root, ".codex", "config.toml"),
 		filepath.Join(root, ".cursor", "mcp.json"),
-		filepath.Join(root, ".continue", "mcp.json"),
+		filepath.Join(root, ".continue", "config.yaml"),
 	}
 
 	if home != "" {
@@ -77,11 +77,14 @@ func (s *MCPScanner) Scan(ctx context.Context, root string) (*ScannerResult, err
 
 		result.Findings = append(result.Findings, rules.ScanForSecrets(path, content)...)
 
-		// TOML files (Codex config) need a different parser
+		// TOML (Codex) and YAML (Continue.dev) configs need dedicated parsers.
 		var servers map[string]mcpEntry
-		if strings.HasSuffix(path, ".toml") {
+		switch {
+		case strings.HasSuffix(path, ".toml"):
 			servers = parseCodexMCPTOML(content)
-		} else {
+		case strings.HasSuffix(path, ".yaml") || strings.HasSuffix(path, ".yml"):
+			servers = parseContinueMCPYAML(content)
+		default:
 			var mf mcpFile
 			if err := json.Unmarshal(data, &mf); err != nil {
 				result.Findings = append(result.Findings, model.Finding{
@@ -264,6 +267,117 @@ func parseTOMLStringArray(s string) []string {
 		}
 	}
 	return result
+}
+
+// parseContinueMCPYAML extracts the mcpServers list from a Continue.dev
+// config.yaml, e.g.:
+//
+//	mcpServers:
+//	  - name: sqlite
+//	    command: uvx
+//	    args: [mcp-server-sqlite]
+//	    env:
+//	      NODE_ENV: production
+func parseContinueMCPYAML(content string) map[string]mcpEntry {
+	servers := map[string]mcpEntry{}
+	lines := strings.Split(content, "\n")
+
+	start := -1
+	for i, line := range lines {
+		if strings.TrimSpace(line) == "mcpServers:" && indentOf(line) == 0 {
+			start = i + 1
+			break
+		}
+	}
+	if start == -1 {
+		return servers
+	}
+
+	var current *mcpEntry
+	currentName := ""
+	itemIndent := -1
+	inArgsBlock, inEnvBlock := false, false
+
+	flush := func() {
+		if current != nil && currentName != "" {
+			servers[currentName] = *current
+		}
+	}
+
+	for i := start; i < len(lines); i++ {
+		line := lines[i]
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+		indent := indentOf(line)
+		if indent == 0 {
+			break // left the mcpServers block
+		}
+		if itemIndent == -1 {
+			itemIndent = indent
+		}
+
+		if strings.HasPrefix(trimmed, "- ") {
+			if indent == itemIndent {
+				// New mcpServers list entry.
+				flush()
+				current = &mcpEntry{Env: map[string]string{}}
+				currentName = ""
+				inArgsBlock, inEnvBlock = false, false
+				if key, val, ok := parseYAMLKeyVal(strings.TrimPrefix(trimmed, "- ")); ok && key == "name" {
+					currentName = val
+				}
+				continue
+			}
+			// Nested list item, e.g. under args:.
+			if current != nil && inArgsBlock {
+				current.Args = append(current.Args, strings.Trim(strings.TrimPrefix(trimmed, "- "), `"'`))
+			}
+			continue
+		}
+
+		if current == nil {
+			continue
+		}
+
+		key, val, ok := parseYAMLKeyVal(trimmed)
+		if !ok {
+			continue
+		}
+		switch key {
+		case "name":
+			currentName = val
+			inArgsBlock, inEnvBlock = false, false
+		case "command":
+			current.Command = val
+			inArgsBlock, inEnvBlock = false, false
+		case "args":
+			inEnvBlock = false
+			if val != "" {
+				current.Args = parseTOMLStringArray(val)
+				inArgsBlock = false
+			} else {
+				inArgsBlock = true
+			}
+		case "env":
+			inArgsBlock = false
+			inEnvBlock = val == ""
+		default:
+			inArgsBlock = false
+			if inEnvBlock {
+				current.Env[key] = val
+			} else {
+				inEnvBlock = false
+			}
+		}
+	}
+	flush()
+	return servers
+}
+
+func indentOf(line string) int {
+	return len(line) - len(strings.TrimLeft(line, " "))
 }
 
 func looksLikeSecret(key string) bool {
