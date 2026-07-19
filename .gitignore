@@ -1,4 +1,5 @@
 /agent-audit
+/dist/
 coverage.out
 report.json
 report.md

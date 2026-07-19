@@ -36,6 +36,19 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
+homebrew_casks:
+  - name: agent-audit
+    repository:
+      owner: skromesch
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Casks
+    homepage: "https://github.com/skromesch/agent-audit"
+    description: "Audit AI coding agent configurations in your project — detect tools, MCP servers, skills, secrets, and misconfigurations across all major ecosystems."
+    binaries:
+      - agent-audit
+
 changelog:
   use: github
   sort: asc
