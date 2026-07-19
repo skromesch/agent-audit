@@ -35,6 +35,14 @@ Audit AI coding agent configurations in your project — detect tools, MCP serve
 
 ## Installation
 
+macOS or Linux, via Homebrew:
+
+```bash
+brew install skromesch/tap/agent-audit
+```
+
+Or with Go:
+
 ```bash
 go install github.com/skromesch/agent-audit/cmd/agent-audit@latest
 ```
