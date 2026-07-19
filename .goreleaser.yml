@@ -45,9 +45,15 @@ homebrew_casks:
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     directory: Casks
     homepage: "https://github.com/skromesch/agent-audit"
-    description: "Audit AI coding agent configurations in your project — detect tools, MCP servers, skills, secrets, and misconfigurations across all major ecosystems."
+    description: "Audit AI coding agent configs for secrets, MCP servers, and misconfigurations"
     binaries:
       - agent-audit
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/agent-audit"]
+          end
 
 changelog:
   use: github
