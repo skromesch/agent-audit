@@ -31,7 +31,7 @@ models:
 
 func TestContinueScannerIgnoresUnrelatedRootConfigYAML(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", t.TempDir())
+	setHome(t, t.TempDir())
 	os.WriteFile(filepath.Join(dir, "config.yaml"), []byte("server:\n  port: 8080\n"), 0644)
 
 	result, err := scanner.NewContinueScanner().Scan(context.Background(), dir)
@@ -45,7 +45,7 @@ func TestContinueScannerIgnoresUnrelatedRootConfigYAML(t *testing.T) {
 
 func TestContinueScannerDetectsBlockFolder(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", t.TempDir())
+	setHome(t, t.TempDir())
 	os.MkdirAll(filepath.Join(dir, ".continue", "mcpServers"), 0755)
 	os.WriteFile(filepath.Join(dir, ".continue", "mcpServers", "db.yaml"), []byte("name: db\nmcpServers: []\n"), 0644)
 

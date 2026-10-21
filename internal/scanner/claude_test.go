@@ -98,7 +98,7 @@ func TestClaudeScannerDetectsProjectSubagentSecret(t *testing.T) {
 func TestClaudeScannerDetectsGlobalSubagentSecret(t *testing.T) {
 	dir := t.TempDir()
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	setHome(t, home)
 
 	agentsDir := filepath.Join(home, ".claude", "agents")
 	os.MkdirAll(agentsDir, 0755)
@@ -180,7 +180,7 @@ func TestClaudeScannerDetectsSecrets(t *testing.T) {
 
 func TestClaudeScannerDetectsLocalMemoryAndBypassMode(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", t.TempDir())
+	setHome(t, t.TempDir())
 	os.WriteFile(filepath.Join(dir, "CLAUDE.local.md"), []byte("# local notes"), 0644)
 	os.MkdirAll(filepath.Join(dir, ".claude"), 0755)
 	os.WriteFile(filepath.Join(dir, ".claude", "settings.json"), []byte(`{
@@ -216,7 +216,7 @@ func TestClaudeScannerDetectsLocalMemoryAndBypassMode(t *testing.T) {
 func TestClaudeScannerAttributesClaudeJSON(t *testing.T) {
 	dir := t.TempDir()
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	setHome(t, home)
 	os.WriteFile(filepath.Join(dir, "CLAUDE.md"), []byte("# project"), 0644)
 	os.WriteFile(filepath.Join(home, ".claude.json"), []byte(`{"mcpServers": {}}`), 0644)
 

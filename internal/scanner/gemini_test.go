@@ -59,7 +59,7 @@ func TestGeminiScannerDetectsSecrets(t *testing.T) {
 
 func TestGeminiScannerDetectsProjectSettingsJSON(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", t.TempDir())
+	setHome(t, t.TempDir())
 
 	geminiDir := filepath.Join(dir, ".gemini")
 	os.MkdirAll(geminiDir, 0755)
@@ -84,7 +84,7 @@ func TestGeminiScannerNoDetectionWithoutFiles(t *testing.T) {
 	dir := t.TempDir()
 
 	// Override HOME so the scanner can't pick up real ~/.gemini/settings.json.
-	t.Setenv("HOME", dir)
+	setHome(t, dir)
 
 	s := scanner.NewGeminiScanner()
 	result, err := s.Scan(context.Background(), dir)
@@ -98,7 +98,7 @@ func TestGeminiScannerNoDetectionWithoutFiles(t *testing.T) {
 
 func TestGeminiScannerReadsNestedModelName(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", t.TempDir())
+	setHome(t, t.TempDir())
 	os.MkdirAll(filepath.Join(dir, ".gemini"), 0755)
 	os.WriteFile(filepath.Join(dir, ".gemini", "settings.json"), []byte(`{"model": {"name": "gemini-2.5-pro"}}`), 0644)
 
@@ -113,7 +113,7 @@ func TestGeminiScannerReadsNestedModelName(t *testing.T) {
 
 func TestGeminiScannerDetectsDotEnvSecret(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", t.TempDir())
+	setHome(t, t.TempDir())
 	os.MkdirAll(filepath.Join(dir, ".gemini"), 0755)
 	os.WriteFile(filepath.Join(dir, ".gemini", ".env"), []byte("GEMINI_API_KEY=AIzaSyA1234567890abcdefghijklmnopqrstuv\n"), 0644)
 

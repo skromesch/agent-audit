@@ -32,7 +32,7 @@ auto-commits: false
 func TestAiderScannerDetectsHomeConfigSecret(t *testing.T) {
 	dir := t.TempDir()
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	setHome(t, home)
 
 	os.WriteFile(filepath.Join(home, ".aider.conf.yml"), []byte(
 		"OPENAI_API_KEY: sk-proj-abcdefghijklmnopqrstuvwx\n"), 0644)
@@ -55,7 +55,7 @@ func TestAiderScannerDetectsHomeConfigSecret(t *testing.T) {
 
 func TestAiderScannerDetectsRootEnvSecret(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", t.TempDir())
+	setHome(t, t.TempDir())
 
 	os.WriteFile(filepath.Join(dir, ".env"), []byte(
 		"OPENAI_API_KEY=sk-proj-abcdefghijklmnopqrstuvwx\n"), 0644)
