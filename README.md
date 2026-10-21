@@ -55,7 +55,7 @@ cd agent-audit
 make build
 ```
 
-Requires Go 1.22+.
+Requires Go 1.24+.
 
 ## Usage
 

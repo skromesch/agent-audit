@@ -41,10 +41,10 @@ func renderAbout(width, height int) string {
 	var kb strings.Builder
 	kb.WriteString(StyleHeader.Render("Keybindings") + "\n")
 	for _, b := range keybindings {
-		kb.WriteString(fmt.Sprintf("  %-20s %s\n",
+		fmt.Fprintf(&kb, "  %-20s %s\n",
 			StyleMuted.Render(b.key),
 			b.desc,
-		))
+		)
 	}
 
 	keybindBox := StyleBox.Width(width - 4).Render(strings.TrimRight(kb.String(), "\n"))

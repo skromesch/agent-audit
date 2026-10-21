@@ -45,9 +45,10 @@ func WriteMarkdown(result *model.ScanResult, w io.Writer) error {
 	fmt.Fprintf(w, "## Security Findings\n\n")
 	for _, f := range result.Findings {
 		icon := "ℹ️"
-		if f.Severity == model.SeverityWarning {
+		switch f.Severity {
+		case model.SeverityWarning:
 			icon = "⚠️"
-		} else if f.Severity == model.SeverityCritical {
+		case model.SeverityCritical:
 			icon = "🚨"
 		}
 		fmt.Fprintf(w, "- %s **[%s]** `%s`: %s\n", icon, f.Severity, f.Path, f.Description)

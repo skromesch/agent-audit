@@ -30,12 +30,12 @@ func renderSecurity(result *model.ScanResult, width, _ int) string {
 			severityStyle = StyleMuted
 		}
 
-		sb.WriteString(fmt.Sprintf("%s [%s] %s\n",
+		fmt.Fprintf(&sb, "%s [%s] %s\n",
 			severityStyle.Render(icon),
 			severityStyle.Render(string(f.Severity)),
 			f.Description,
-		))
-		sb.WriteString(fmt.Sprintf("  %s\n\n", StyleMuted.Render(f.Path)))
+		)
+		fmt.Fprintf(&sb, "  %s\n\n", StyleMuted.Render(f.Path))
 	}
 	return StyleBox.Width(width - 4).Render(sb.String())
 }

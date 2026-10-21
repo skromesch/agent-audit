@@ -164,8 +164,8 @@ func buildMCPRightPane(s model.MCPServer, width, height, scroll int) string {
 	if scope == "" {
 		scope = "project"
 	}
-	sb.WriteString(fmt.Sprintf("%-10s %s\n", StyleMuted.Render("Scope:"), scope))
-	sb.WriteString(fmt.Sprintf("%-10s %s\n", StyleMuted.Render("Source:"), s.Source))
+	fmt.Fprintf(&sb, "%-10s %s\n", StyleMuted.Render("Scope:"), scope)
+	fmt.Fprintf(&sb, "%-10s %s\n", StyleMuted.Render("Source:"), s.Source)
 	sb.WriteString("\n")
 
 	cmd := s.Command
@@ -174,23 +174,23 @@ func buildMCPRightPane(s model.MCPServer, width, height, scroll int) string {
 	}
 	if s.URL != "" {
 		sb.WriteString(StyleMuted.Render("URL:") + "\n")
-		sb.WriteString(fmt.Sprintf("  %s\n", s.URL))
+		fmt.Fprintf(&sb, "  %s\n", s.URL)
 	} else {
 		sb.WriteString(StyleMuted.Render("Command:") + "\n")
-		sb.WriteString(fmt.Sprintf("  %s\n", cmd))
+		fmt.Fprintf(&sb, "  %s\n", cmd)
 	}
 
 	if len(s.Headers) > 0 {
 		sb.WriteString("\n" + StyleMuted.Render("Headers:") + "\n")
 		for k, v := range s.Headers {
-			sb.WriteString(fmt.Sprintf("  %s: %s\n", k, v))
+			fmt.Fprintf(&sb, "  %s: %s\n", k, v)
 		}
 	}
 
 	if len(s.Env) > 0 {
 		sb.WriteString("\n" + StyleMuted.Render("Environment:") + "\n")
 		for k, v := range s.Env {
-			sb.WriteString(fmt.Sprintf("  %s = %s\n", k, v))
+			fmt.Fprintf(&sb, "  %s = %s\n", k, v)
 		}
 	}
 

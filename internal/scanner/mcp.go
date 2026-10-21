@@ -46,7 +46,7 @@ type mcpFile struct {
 
 // claudeJSON is the structure of ~/.claude.json relevant to MCP.
 type claudeJSON struct {
-	MCPServers map[string]mcpEntry            `json:"mcpServers"`
+	MCPServers map[string]mcpEntry `json:"mcpServers"`
 	Projects   map[string]struct {
 		MCPServers map[string]mcpEntry `json:"mcpServers"`
 	} `json:"projects"`
