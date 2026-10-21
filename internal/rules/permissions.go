@@ -22,6 +22,9 @@ var permChecks = []permCheck{
 	{"allow_all: true", "allow_all flag set to true", model.SeverityWarning},
 	{"allow_all=true", "allow_all flag set to true", model.SeverityWarning},
 	{"shell: unrestricted", "Unrestricted shell execution enabled", model.SeverityCritical},
+	// Codex config.toml (current key names).
+	{`sandbox_mode = "danger-full-access"`, "Codex sandbox disabled (danger-full-access)", model.SeverityCritical},
+	{`approval_policy = "never"`, "Codex approval prompts disabled (approval_policy = never)", model.SeverityWarning},
 }
 
 // CheckPermissions scans file content for dangerous permission configurations.
@@ -45,8 +48,17 @@ func CheckPermissions(tool, path, content string) []model.Finding {
 		})
 	}
 
-	if hasWildcardAllowJSON(content) {
-		addFinding("Wildcard allow permission — unrestricted tool access", model.SeverityCritical)
+	if v, ok := parseJSON(content); ok {
+		if findWildcardAllow(v) {
+			addFinding("Wildcard allow permission — unrestricted tool access", model.SeverityCritical)
+		}
+		// Claude Code settings.json.
+		if findJSONValue(v, "defaultMode", "bypassPermissions") {
+			addFinding("Permission prompts bypassed (defaultMode = bypassPermissions)", model.SeverityCritical)
+		}
+		if findJSONValue(v, "enableAllProjectMcpServers", true) {
+			addFinding("All project MCP servers auto-approved (enableAllProjectMcpServers)", model.SeverityWarning)
+		}
 	}
 
 	lower := strings.ToLower(content)
@@ -58,18 +70,41 @@ func CheckPermissions(tool, path, content string) []model.Finding {
 	return findings
 }
 
-// hasWildcardAllowJSON parses content as JSON and looks for any "allow" array
-// (at any nesting depth, e.g. top-level or under "permissions") containing a
-// literal "*" entry. Using a real JSON parse instead of substring matching
-// means pretty-printed or reordered settings files are still detected.
-func hasWildcardAllowJSON(content string) bool {
+// parseJSON parses content as generic JSON. Using a real JSON parse instead of
+// substring matching means pretty-printed or reordered settings files are
+// still detected.
+func parseJSON(content string) (interface{}, bool) {
 	var v interface{}
 	if err := json.Unmarshal([]byte(content), &v); err != nil {
-		return false
+		return nil, false
 	}
-	return findWildcardAllow(v)
+	return v, true
 }
 
+// findJSONValue reports whether key is set to want at any nesting depth.
+func findJSONValue(v interface{}, key string, want interface{}) bool {
+	switch val := v.(type) {
+	case map[string]interface{}:
+		if got, ok := val[key]; ok && got == want {
+			return true
+		}
+		for _, child := range val {
+			if findJSONValue(child, key, want) {
+				return true
+			}
+		}
+	case []interface{}:
+		for _, item := range val {
+			if findJSONValue(item, key, want) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// findWildcardAllow looks for any "allow" array (at any nesting depth, e.g.
+// top-level or under "permissions") containing a literal "*" entry.
 func findWildcardAllow(v interface{}) bool {
 	switch val := v.(type) {
 	case map[string]interface{}:

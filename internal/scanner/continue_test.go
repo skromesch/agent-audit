@@ -28,3 +28,32 @@ models:
 		t.Fatal("expected agent")
 	}
 }
+
+func TestContinueScannerIgnoresUnrelatedRootConfigYAML(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", t.TempDir())
+	os.WriteFile(filepath.Join(dir, "config.yaml"), []byte("server:\n  port: 8080\n"), 0644)
+
+	result, err := scanner.NewContinueScanner().Scan(context.Background(), dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Agent != nil {
+		t.Errorf("root config.yaml must not trigger Continue.dev detection, got files %v", result.Agent.ConfigFiles)
+	}
+}
+
+func TestContinueScannerDetectsBlockFolder(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", t.TempDir())
+	os.MkdirAll(filepath.Join(dir, ".continue", "mcpServers"), 0755)
+	os.WriteFile(filepath.Join(dir, ".continue", "mcpServers", "db.yaml"), []byte("name: db\nmcpServers: []\n"), 0644)
+
+	result, err := scanner.NewContinueScanner().Scan(context.Background(), dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Agent == nil {
+		t.Fatal("expected agent from .continue/mcpServers block")
+	}
+}

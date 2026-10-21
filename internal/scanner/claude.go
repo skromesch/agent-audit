@@ -21,6 +21,8 @@ func (s *ClaudeScanner) Scan(ctx context.Context, root string) (*ScannerResult, 
 
 	candidates := []string{
 		filepath.Join(root, "CLAUDE.md"),
+		filepath.Join(root, "CLAUDE.local.md"),
+		filepath.Join(root, ".claude", "CLAUDE.md"),
 		filepath.Join(root, ".claude", "settings.json"),
 		filepath.Join(root, ".claude", "settings.local.json"),
 		filepath.Join(root, ".mcp.json"),
@@ -30,9 +32,15 @@ func (s *ClaudeScanner) Scan(ctx context.Context, root string) (*ScannerResult, 
 	home, homeErr := os.UserHomeDir()
 	if homeErr == nil {
 		candidates = append(candidates,
+			filepath.Join(home, ".claude", "CLAUDE.md"),
 			filepath.Join(home, ".claude", "settings.json"),
 		)
 	}
+	// Enterprise managed settings (macOS, Linux).
+	candidates = append(candidates,
+		filepath.Join("/Library", "Application Support", "ClaudeCode", "managed-settings.json"),
+		filepath.Join("/etc", "claude-code", "managed-settings.json"),
+	)
 
 	cfg := &model.AgentConfig{Tool: "Claude Code", Settings: map[string]string{}}
 	found := false
@@ -51,7 +59,7 @@ func (s *ClaudeScanner) Scan(ctx context.Context, root string) (*ScannerResult, 
 		result.Findings = append(result.Findings, rules.CheckPermissions("Claude Code", path, content)...)
 
 		base := filepath.Base(path)
-		if base == "settings.json" || base == "settings.local.json" {
+		if base == "settings.json" || base == "settings.local.json" || base == "managed-settings.json" {
 			var raw map[string]json.RawMessage
 			if json.Unmarshal(data, &raw) == nil {
 				if m, ok := raw["model"]; ok {
@@ -70,6 +78,16 @@ func (s *ClaudeScanner) Scan(ctx context.Context, root string) (*ScannerResult, 
 	found = scanClaudeAgentsDir(filepath.Join(root, ".claude", "agents"), result, cfg) || found
 	if homeErr == nil {
 		found = scanClaudeAgentsDir(filepath.Join(home, ".claude", "agents"), result, cfg) || found
+	}
+
+	// ~/.claude.json holds user- and local-scope MCP servers. The MCP scanner
+	// parses it; listing it here only attributes those servers to Claude Code.
+	// It isn't secret-scanned wholesale because it also stores OAuth/session state.
+	if homeErr == nil && found {
+		claudeJSON := filepath.Join(home, ".claude.json")
+		if _, err := os.Stat(claudeJSON); err == nil {
+			cfg.ConfigFiles = append(cfg.ConfigFiles, claudeJSON)
+		}
 	}
 
 	if found {

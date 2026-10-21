@@ -25,6 +25,8 @@ type MCPServer struct {
 	Command string            `json:"command"`
 	Args    []string          `json:"args"`
 	Env     map[string]string `json:"env"`
+	URL     string            `json:"url,omitempty"`     // remote (HTTP/SSE) servers
+	Headers map[string]string `json:"headers,omitempty"` // sensitive values masked
 	Source  string            `json:"source"`
 	Scope   string            `json:"scope"` // "project" or "global"
 }

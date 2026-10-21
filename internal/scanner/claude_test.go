@@ -177,3 +177,58 @@ func TestClaudeScannerDetectsSecrets(t *testing.T) {
 		t.Error("expected secret finding, got none")
 	}
 }
+
+func TestClaudeScannerDetectsLocalMemoryAndBypassMode(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", t.TempDir())
+	os.WriteFile(filepath.Join(dir, "CLAUDE.local.md"), []byte("# local notes"), 0644)
+	os.MkdirAll(filepath.Join(dir, ".claude"), 0755)
+	os.WriteFile(filepath.Join(dir, ".claude", "settings.json"), []byte(`{
+  "permissions": {
+    "defaultMode": "bypassPermissions"
+  }
+}`), 0644)
+
+	result, err := scanner.NewClaudeScanner().Scan(context.Background(), dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var hasLocal bool
+	for _, f := range result.Agent.ConfigFiles {
+		if filepath.Base(f) == "CLAUDE.local.md" {
+			hasLocal = true
+		}
+	}
+	if !hasLocal {
+		t.Error("CLAUDE.local.md not detected")
+	}
+	var bypass bool
+	for _, f := range result.Findings {
+		if f.Category == "permissions" && f.Severity == "CRITICAL" {
+			bypass = true
+		}
+	}
+	if !bypass {
+		t.Error("expected critical finding for defaultMode=bypassPermissions")
+	}
+}
+
+func TestClaudeScannerAttributesClaudeJSON(t *testing.T) {
+	dir := t.TempDir()
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	os.WriteFile(filepath.Join(dir, "CLAUDE.md"), []byte("# project"), 0644)
+	os.WriteFile(filepath.Join(home, ".claude.json"), []byte(`{"mcpServers": {}}`), 0644)
+
+	result, err := scanner.NewClaudeScanner().Scan(context.Background(), dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := filepath.Join(home, ".claude.json")
+	for _, f := range result.Agent.ConfigFiles {
+		if f == want {
+			return
+		}
+	}
+	t.Errorf("ConfigFiles %v should include %s", result.Agent.ConfigFiles, want)
+}

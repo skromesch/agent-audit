@@ -52,6 +52,30 @@ func TestCheckPermissions(t *testing.T) {
 			wantSev:  model.SeverityWarning,
 		},
 		{
+			name:     "claude bypass permissions",
+			content:  `{"permissions": {"defaultMode": "bypassPermissions"}}`,
+			wantHits: 1,
+			wantSev:  model.SeverityCritical,
+		},
+		{
+			name:     "claude auto-approve project mcp",
+			content:  `{"enableAllProjectMcpServers": true}`,
+			wantHits: 1,
+			wantSev:  model.SeverityWarning,
+		},
+		{
+			name:     "codex danger-full-access",
+			content:  `sandbox_mode = "danger-full-access"`,
+			wantHits: 1,
+			wantSev:  model.SeverityCritical,
+		},
+		{
+			name:     "codex approval never",
+			content:  `approval_policy = "never"`,
+			wantHits: 1,
+			wantSev:  model.SeverityWarning,
+		},
+		{
 			name:     "safe config",
 			content:  `{"model": "claude-opus-4-5"}`,
 			wantHits: 0,
