@@ -7,6 +7,29 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.3.0] - 2026-10-21
+
+### Added
+
+- **Remote MCP servers** — HTTP/SSE servers (`url`, Gemini `httpUrl`) are now listed with their URL; `headers` / Codex `http_headers` values are masked, and hardcoded auth headers are reported as secrets
+- **OpenCode MCP servers** — the `mcp` block of `opencode.json(c)` (local argv arrays and remote URLs) is now parsed
+- **Gemini CLI** — project `.gemini/settings.json` MCP servers, `.gemini/.env` / `~/.gemini/.env`, and system settings (`/etc/gemini-cli/`, `/Library/Application Support/GeminiCli/`) are scanned; MCP servers with `"trust": true` are flagged
+- **Continue.dev** — `~/.continue/config.yaml` and standalone block folders (`.continue/mcpServers/*.yaml`, etc.) are scanned
+- **Claude Code** — `CLAUDE.local.md`, `.claude/CLAUDE.md`, `~/.claude/CLAUDE.md` and managed settings (`managed-settings.json`) are scanned; `defaultMode: bypassPermissions` (critical) and `enableAllProjectMcpServers: true` (warning) are flagged
+- **Codex permission checks** — `sandbox_mode = "danger-full-access"` (critical) and `approval_policy = "never"` (warning)
+- **Secret patterns** — Google API keys (`AIza…`), GitHub fine-grained tokens (`github_pat_…`), and `Bearer` tokens
+
+### Fixed
+
+- **Codex settings were only read from `[profile.*]` tables** — current Codex configs put `model`, `approval_policy` and `sandbox_mode` at the top level and profiles under `[profiles.*]`; both are now read (legacy `[profile.*]` / `approval` still work)
+- **TOML values** — trailing inline comments and single-quoted literal strings (`command = 'docker'`) are now parsed correctly
+- **Continue.dev false positive** — any root-level `config.yaml` caused a Continue.dev detection; that candidate was removed
+- **Gemini CLI model** — the nested `"model": {"name": …}` settings format is now read
+- **MCP tab navigation** — ↑/↓ followed the internal server order instead of the agent-grouped list, so the selection jumped around; the cursor now follows the displayed order
+- **MCP servers from `~/.claude.json`** were listed under "Other" instead of Claude Code
+
+---
+
 ## [1.2.0] - 2026-07-19
 
 ### Added

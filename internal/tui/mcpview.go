@@ -36,8 +36,8 @@ func renderMCP(result *model.ScanResult, width, height, cursor, focus, rightScro
 	rightWidth := width - leftWidth - 2
 	innerHeight := height - 2
 
-	leftContent := buildMCPLeftPane(servers, result.Agents, agentForSource, cursor, innerHeight)
-	rightContent := buildMCPRightPane(servers[cursor], rightWidth-4, innerHeight, rightScroll)
+	leftContent, selected := buildMCPLeftPane(servers, result.Agents, agentForSource, cursor, innerHeight)
+	rightContent := buildMCPRightPane(servers[selected], rightWidth-4, innerHeight, rightScroll)
 
 	leftBorder := StyleBox
 	rightBorder := StyleBox
@@ -53,7 +53,10 @@ func renderMCP(result *model.ScanResult, width, height, cursor, focus, rightScro
 	return lipgloss.JoinHorizontal(lipgloss.Top, left, right)
 }
 
-func buildMCPLeftPane(servers []model.MCPServer, agents []model.AgentConfig, agentForSource map[string]string, cursor, visibleHeight int) string {
+// buildMCPLeftPane renders the agent-grouped server list. cursor is a position
+// in the displayed order (not an index into servers); the index of the server
+// at that position is returned so the detail pane shows the same entry.
+func buildMCPLeftPane(servers []model.MCPServer, agents []model.AgentConfig, agentForSource map[string]string, cursor, visibleHeight int) (string, int) {
 	type agentGroup struct {
 		project []int
 		global  []int
@@ -88,6 +91,7 @@ func buildMCPLeftPane(servers []model.MCPServer, agents []model.AgentConfig, age
 		serverIdx int
 	}
 	var lines []lineItem
+	pos, selected := 0, 0
 
 	for _, agentName := range agentOrder {
 		g := groupMap[agentName]
@@ -107,10 +111,12 @@ func buildMCPLeftPane(servers []model.MCPServer, agents []model.AgentConfig, age
 				s := servers[idx]
 				marker := "  "
 				displayName := s.Name
-				if idx == cursor {
+				if pos == cursor {
+					selected = idx
 					marker = "▶ "
 					displayName = lipgloss.NewStyle().Bold(true).Foreground(colorAccent).Render(displayName)
 				}
+				pos++
 				lines = append(lines, lineItem{fmt.Sprintf("%s%s", marker, displayName), idx})
 			}
 		}
@@ -122,7 +128,7 @@ func buildMCPLeftPane(servers []model.MCPServer, agents []model.AgentConfig, age
 	// auto-scroll to keep cursor visible
 	cursorLine := 0
 	for i, l := range lines {
-		if l.serverIdx == cursor {
+		if l.serverIdx == selected {
 			cursorLine = i
 			break
 		}
@@ -146,7 +152,7 @@ func buildMCPLeftPane(servers []model.MCPServer, agents []model.AgentConfig, age
 	for _, l := range lines[offset:end] {
 		sb.WriteString(l.text + "\n")
 	}
-	return strings.TrimRight(sb.String(), "\n")
+	return strings.TrimRight(sb.String(), "\n"), selected
 }
 
 func buildMCPRightPane(s model.MCPServer, width, height, scroll int) string {
@@ -166,8 +172,20 @@ func buildMCPRightPane(s model.MCPServer, width, height, scroll int) string {
 	if len(s.Args) > 0 {
 		cmd += " " + strings.Join(s.Args, " ")
 	}
-	sb.WriteString(StyleMuted.Render("Command:") + "\n")
-	sb.WriteString(fmt.Sprintf("  %s\n", cmd))
+	if s.URL != "" {
+		sb.WriteString(StyleMuted.Render("URL:") + "\n")
+		sb.WriteString(fmt.Sprintf("  %s\n", s.URL))
+	} else {
+		sb.WriteString(StyleMuted.Render("Command:") + "\n")
+		sb.WriteString(fmt.Sprintf("  %s\n", cmd))
+	}
+
+	if len(s.Headers) > 0 {
+		sb.WriteString("\n" + StyleMuted.Render("Headers:") + "\n")
+		for k, v := range s.Headers {
+			sb.WriteString(fmt.Sprintf("  %s: %s\n", k, v))
+		}
+	}
 
 	if len(s.Env) > 0 {
 		sb.WriteString("\n" + StyleMuted.Render("Environment:") + "\n")

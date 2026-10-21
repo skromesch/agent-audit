@@ -73,9 +73,9 @@ code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:.9em}
 
 <h2>MCP Servers</h2>
 <table>
-<tr><th>Name</th><th>Command</th><th>Source</th></tr>
+<tr><th>Name</th><th>Command / URL</th><th>Source</th></tr>
 {{range .MCPServers}}
-<tr><td>{{.Name}}</td><td><code>{{.Command}}</code></td><td><code>{{.Source}}</code></td></tr>
+<tr><td>{{.Name}}</td><td><code>{{if .URL}}{{.URL}}{{else}}{{.Command}}{{end}}</code></td><td><code>{{.Source}}</code></td></tr>
 {{end}}
 </table>
 </body>

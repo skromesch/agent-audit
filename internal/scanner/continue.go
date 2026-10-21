@@ -22,7 +22,13 @@ func (s *ContinueScanner) Scan(ctx context.Context, root string) (*ScannerResult
 		filepath.Join(root, ".continue", "config.yaml"),
 		filepath.Join(root, ".continue", "continue.yaml"),
 		filepath.Join(root, "continue.yaml"),
-		filepath.Join(root, "config.yaml"),
+	}
+	// Standalone blocks (models, MCP servers, rules, ...) live in per-type folders.
+	if matches, err := filepath.Glob(filepath.Join(root, ".continue", "*", "*.yaml")); err == nil {
+		candidates = append(candidates, matches...)
+	}
+	if home, err := os.UserHomeDir(); err == nil {
+		candidates = append(candidates, filepath.Join(home, ".continue", "config.yaml"))
 	}
 
 	cfg := &model.AgentConfig{Tool: "Continue.dev", Settings: map[string]string{}}

@@ -6,11 +6,13 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/skromesch/agent-audit/internal/model"
 	"github.com/skromesch/agent-audit/internal/scanner"
 )
 
 func TestCodexScannerDetectsConfig(t *testing.T) {
 	dir := t.TempDir()
+	t.Setenv("HOME", t.TempDir())
 	os.WriteFile(filepath.Join(dir, "AGENTS.md"), []byte("# Codex instructions"), 0644)
 	codexDir := filepath.Join(dir, ".codex")
 	os.MkdirAll(codexDir, 0755)
@@ -123,5 +125,65 @@ approval = "none"
 	}
 	if permFindings == 0 {
 		t.Error("expected permission finding for approval=none")
+	}
+}
+
+func TestCodexScannerReadsTopLevelKeys(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", t.TempDir())
+	codexDir := filepath.Join(dir, ".codex")
+	os.MkdirAll(codexDir, 0755)
+	os.WriteFile(filepath.Join(codexDir, "config.toml"), []byte(`
+model = "gpt-5-codex" # default model
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+
+[profiles.fast]
+model = "o4-mini"
+`), 0644)
+
+	result, err := scanner.NewCodexScanner().Scan(context.Background(), dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]string{"model": "gpt-5-codex", "approval_policy": "never", "sandbox_mode": "danger-full-access"}
+	for k, v := range want {
+		if got := result.Agent.Settings[k]; got != v {
+			t.Errorf("%s = %q, want %q", k, got, v)
+		}
+	}
+	var critical, warning int
+	for _, f := range result.Findings {
+		if f.Category != "permissions" {
+			continue
+		}
+		switch f.Severity {
+		case model.SeverityCritical:
+			critical++
+		case model.SeverityWarning:
+			warning++
+		}
+	}
+	if critical != 1 || warning != 1 {
+		t.Errorf("got %d critical / %d warning permission findings, want 1/1", critical, warning)
+	}
+}
+
+func TestCodexScannerReadsProfilesTable(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", t.TempDir())
+	codexDir := filepath.Join(dir, ".codex")
+	os.MkdirAll(codexDir, 0755)
+	os.WriteFile(filepath.Join(codexDir, "config.toml"), []byte(`
+[profiles.fast]
+model = "o4-mini"
+`), 0644)
+
+	result, err := scanner.NewCodexScanner().Scan(context.Background(), dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := result.Agent.Settings["model"]; got != "o4-mini" {
+		t.Errorf("model = %q, want %q", got, "o4-mini")
 	}
 }

@@ -34,7 +34,11 @@ func WriteMarkdown(result *model.ScanResult, w io.Writer) error {
 	fmt.Fprintf(w, "## MCP Servers\n\n")
 	for _, s := range result.MCPServers {
 		fmt.Fprintf(w, "### %s\n\n", s.Name)
-		fmt.Fprintf(w, "- **Command:** `%s %s`\n", s.Command, strings.Join(s.Args, " "))
+		if s.URL != "" {
+			fmt.Fprintf(w, "- **URL:** `%s`\n", s.URL)
+		} else {
+			fmt.Fprintf(w, "- **Command:** `%s %s`\n", s.Command, strings.Join(s.Args, " "))
+		}
 		fmt.Fprintf(w, "- **Source:** `%s`\n\n", s.Source)
 	}
 

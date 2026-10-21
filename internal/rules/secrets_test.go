@@ -27,6 +27,24 @@ func TestScanForSecrets(t *testing.T) {
 			wantSev:  model.SeverityCritical,
 		},
 		{
+			name:     "google api key",
+			content:  `"apiKey": "AIzaSyA1234567890abcdefghijklmnopqrstuv"`,
+			wantHits: 1,
+			wantSev:  model.SeverityCritical,
+		},
+		{
+			name:     "github fine-grained token",
+			content:  `token: github_pat_11ABCDEFG0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTU`,
+			wantHits: 1,
+			wantSev:  model.SeverityCritical,
+		},
+		{
+			name:     "bearer header",
+			content:  `"Authorization": "Bearer abcdefghijklmnopqrstuvwxyz123456"`,
+			wantHits: 1,
+			wantSev:  model.SeverityCritical,
+		},
+		{
 			name:     "github token",
 			content:  `GITHUB_TOKEN=ghp_abcdefghijklmnopqrstuvwxyz123456`,
 			wantHits: 1,

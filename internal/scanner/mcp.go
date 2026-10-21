@@ -3,6 +3,7 @@ package scanner
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,6 +22,22 @@ type mcpEntry struct {
 	Command string            `json:"command"`
 	Args    []string          `json:"args"`
 	Env     map[string]string `json:"env"`
+	URL     string            `json:"url"`
+	HTTPURL string            `json:"httpUrl"` // Gemini CLI streamable HTTP
+	Headers map[string]string `json:"headers"`
+	Trust   bool              `json:"trust"` // Gemini CLI: skip tool confirmations
+}
+
+// openCodeFile is the MCP-relevant part of opencode.json(c): servers live
+// under "mcp", local commands are a single argv array.
+type openCodeFile struct {
+	MCP map[string]struct {
+		Type        string            `json:"type"`
+		Command     []string          `json:"command"`
+		Environment map[string]string `json:"environment"`
+		URL         string            `json:"url"`
+		Headers     map[string]string `json:"headers"`
+	} `json:"mcp"`
 }
 
 type mcpFile struct {
@@ -54,6 +71,13 @@ func (s *MCPScanner) Scan(ctx context.Context, root string) (*ScannerResult, err
 		filepath.Join(root, ".codex", "config.toml"),
 		filepath.Join(root, ".cursor", "mcp.json"),
 		filepath.Join(root, ".continue", "config.yaml"),
+		filepath.Join(root, ".gemini", "settings.json"),
+		filepath.Join(root, "opencode.json"),
+		filepath.Join(root, "opencode.jsonc"),
+	}
+	// Continue.dev standalone MCP blocks.
+	if matches, err := filepath.Glob(filepath.Join(root, ".continue", "mcpServers", "*.yaml")); err == nil {
+		locations = append(locations, matches...)
 	}
 
 	if home != "" {
@@ -64,6 +88,9 @@ func (s *MCPScanner) Scan(ctx context.Context, root string) (*ScannerResult, err
 			filepath.Join(home, ".codex", "mcp.json"),
 			filepath.Join(home, ".codex", "config.toml"),
 			filepath.Join(home, ".gemini", "settings.json"),
+			filepath.Join(home, ".continue", "config.yaml"),
+			filepath.Join(home, ".config", "opencode", "opencode.json"),
+			filepath.Join(home, ".config", "opencode", "opencode.jsonc"),
 		)
 	}
 
@@ -84,6 +111,10 @@ func (s *MCPScanner) Scan(ctx context.Context, root string) (*ScannerResult, err
 			servers = parseCodexMCPTOML(content)
 		case strings.HasSuffix(path, ".yaml") || strings.HasSuffix(path, ".yml"):
 			servers = parseContinueMCPYAML(content)
+		case strings.HasPrefix(filepath.Base(path), "opencode."):
+			// JSONC with comments won't parse; skip silently rather than
+			// reporting a valid config as malformed.
+			servers = parseOpenCodeMCP(data)
 		default:
 			var mf mcpFile
 			if err := json.Unmarshal(data, &mf); err != nil {
@@ -101,26 +132,9 @@ func (s *MCPScanner) Scan(ctx context.Context, root string) (*ScannerResult, err
 		}
 
 		for name, srv := range servers {
-			// Mask env secrets before storing
-			maskedEnv := make(map[string]string, len(srv.Env))
-			for k, v := range srv.Env {
-				if looksLikeSecret(k) {
-					maskedEnv[k] = rules.MaskSecret(v)
-				} else {
-					maskedEnv[k] = v
-				}
-			}
-
-			server := model.MCPServer{
-				Name:    name,
-				Command: srv.Command,
-				Args:    srv.Args,
-				Env:     maskedEnv,
-				Source:  path,
-				Scope:   scopeForPath(path, home),
-			}
+			server, findings := buildMCPServer(name, srv, path, scopeForPath(path, home))
 			result.MCPServers = append(result.MCPServers, server)
-			result.Findings = append(result.Findings, rules.CheckMCPCommands(server)...)
+			result.Findings = append(result.Findings, findings...)
 		}
 	}
 
@@ -148,24 +162,9 @@ func (s *MCPScanner) scanClaudeJSON(path, root, home string, result *ScannerResu
 
 	addServers := func(m map[string]mcpEntry, scope, source string) {
 		for name, srv := range m {
-			maskedEnv := make(map[string]string, len(srv.Env))
-			for k, v := range srv.Env {
-				if looksLikeSecret(k) {
-					maskedEnv[k] = rules.MaskSecret(v)
-				} else {
-					maskedEnv[k] = v
-				}
-			}
-			server := model.MCPServer{
-				Name:    name,
-				Command: srv.Command,
-				Args:    srv.Args,
-				Env:     maskedEnv,
-				Source:  source,
-				Scope:   scope,
-			}
+			server, findings := buildMCPServer(name, srv, source, scope)
 			servers = append(servers, server)
-			result.Findings = append(result.Findings, rules.CheckMCPCommands(server)...)
+			result.Findings = append(result.Findings, findings...)
 			result.Findings = append(result.Findings, rules.ScanForSecrets(source, srv.Command)...)
 		}
 	}
@@ -188,11 +187,93 @@ func (s *MCPScanner) scanClaudeJSON(path, root, home string, result *ScannerResu
 	return servers
 }
 
+// buildMCPServer converts a parsed entry into a model.MCPServer with secret
+// env and header values masked, and returns the security findings for it.
+func buildMCPServer(name string, srv mcpEntry, source, scope string) (model.MCPServer, []model.Finding) {
+	maskedEnv := make(map[string]string, len(srv.Env))
+	for k, v := range srv.Env {
+		if looksLikeSecret(k) {
+			maskedEnv[k] = rules.MaskSecret(v)
+		} else {
+			maskedEnv[k] = v
+		}
+	}
+	var maskedHeaders map[string]string
+	if len(srv.Headers) > 0 {
+		maskedHeaders = make(map[string]string, len(srv.Headers))
+		for k, v := range srv.Headers {
+			if looksLikeSecretHeader(k) {
+				maskedHeaders[k] = rules.MaskSecret(v)
+			} else {
+				maskedHeaders[k] = v
+			}
+		}
+	}
+	url := srv.URL
+	if url == "" {
+		url = srv.HTTPURL
+	}
+	server := model.MCPServer{
+		Name:    name,
+		Command: srv.Command,
+		Args:    srv.Args,
+		Env:     maskedEnv,
+		URL:     url,
+		Headers: maskedHeaders,
+		Source:  source,
+		Scope:   scope,
+	}
+	findings := rules.CheckMCPCommands(server)
+	for k, v := range srv.Headers {
+		if looksLikeSecretHeader(k) && v != "" && !strings.Contains(v, "${") && !strings.HasPrefix(v, "$") {
+			findings = append(findings, model.Finding{
+				Tool:        "security",
+				Category:    "secrets",
+				Scope:       scope,
+				Path:        source,
+				Severity:    model.SeverityCritical,
+				Description: fmt.Sprintf("MCP server %q has a hardcoded %s header", name, k),
+				Details:     map[string]string{"masked_value": rules.MaskSecret(v), "server": name},
+			})
+		}
+	}
+	if srv.Trust {
+		findings = append(findings, model.Finding{
+			Tool:        "security",
+			Category:    "permissions",
+			Scope:       scope,
+			Path:        source,
+			Severity:    model.SeverityWarning,
+			Description: fmt.Sprintf("MCP server %q is trusted — tool call confirmations are bypassed", name),
+			Details:     map[string]string{"server": name},
+		})
+	}
+	return server, findings
+}
+
+// parseOpenCodeMCP extracts the "mcp" block of an opencode.json(c) file.
+func parseOpenCodeMCP(data []byte) map[string]mcpEntry {
+	var f openCodeFile
+	if json.Unmarshal(data, &f) != nil {
+		return nil
+	}
+	servers := make(map[string]mcpEntry, len(f.MCP))
+	for name, srv := range f.MCP {
+		e := mcpEntry{Env: srv.Environment, URL: srv.URL, Headers: srv.Headers}
+		if len(srv.Command) > 0 {
+			e.Command = srv.Command[0]
+			e.Args = srv.Command[1:]
+		}
+		servers[name] = e
+	}
+	return servers
+}
+
 // parseCodexMCPTOML extracts [mcp_servers.*] entries from a Codex TOML config.
 func parseCodexMCPTOML(content string) map[string]mcpEntry {
 	servers := map[string]mcpEntry{}
 	var currentServer string
-	inEnv := false
+	inEnv, inHeaders := false, false
 
 	for _, raw := range strings.Split(content, "\n") {
 		line := strings.TrimSpace(raw)
@@ -202,20 +283,24 @@ func parseCodexMCPTOML(content string) map[string]mcpEntry {
 			inner := line[1 : len(line)-1]
 			if strings.HasPrefix(inner, "mcp_servers.") {
 				rest := strings.TrimPrefix(inner, "mcp_servers.")
-				if strings.Contains(rest, ".env") {
+				if strings.HasSuffix(rest, ".env") {
 					// [mcp_servers.NAME.env]
 					currentServer = strings.TrimSuffix(rest, ".env")
-					inEnv = true
+					inEnv, inHeaders = true, false
+				} else if strings.HasSuffix(rest, ".http_headers") {
+					// [mcp_servers.NAME.http_headers]
+					currentServer = strings.TrimSuffix(rest, ".http_headers")
+					inEnv, inHeaders = false, true
 				} else {
 					currentServer = rest
-					inEnv = false
+					inEnv, inHeaders = false, false
 					if _, ok := servers[currentServer]; !ok {
 						servers[currentServer] = mcpEntry{}
 					}
 				}
 			} else {
 				currentServer = ""
-				inEnv = false
+				inEnv, inHeaders = false, false
 			}
 			continue
 		}
@@ -230,17 +315,29 @@ func parseCodexMCPTOML(content string) map[string]mcpEntry {
 		}
 
 		entry := servers[currentServer]
-		if inEnv {
+		switch {
+		case inEnv:
 			if entry.Env == nil {
 				entry.Env = map[string]string{}
 			}
 			entry.Env[key] = val
-		} else {
+		case inHeaders:
+			if entry.Headers == nil {
+				entry.Headers = map[string]string{}
+			}
+			entry.Headers[key] = val
+		default:
 			switch key {
 			case "command":
 				entry.Command = val
 			case "args":
 				entry.Args = parseTOMLStringArray(val)
+			case "url":
+				entry.URL = val
+			case "env":
+				entry.Env = parseTOMLInlineTable(val)
+			case "http_headers":
+				entry.Headers = parseTOMLInlineTable(val)
 			}
 		}
 		servers[currentServer] = entry
@@ -376,8 +473,34 @@ func parseContinueMCPYAML(content string) map[string]mcpEntry {
 	return servers
 }
 
+// parseTOMLInlineTable parses a flat TOML inline table like
+// { "Authorization" = "Bearer x", X_ID = "y" }.
+func parseTOMLInlineTable(s string) map[string]string {
+	s = strings.TrimSpace(s)
+	if !strings.HasPrefix(s, "{") || !strings.HasSuffix(s, "}") {
+		return nil
+	}
+	m := map[string]string{}
+	for _, part := range strings.Split(s[1:len(s)-1], ",") {
+		if k, v, ok := parseTOMLKeyVal(strings.TrimSpace(part)); ok && k != "" {
+			m[k] = v
+		}
+	}
+	return m
+}
+
 func indentOf(line string) int {
 	return len(line) - len(strings.TrimLeft(line, " "))
+}
+
+func looksLikeSecretHeader(key string) bool {
+	lower := strings.ToLower(key)
+	for _, s := range []string{"auth", "key", "token", "secret"} {
+		if strings.Contains(lower, s) {
+			return true
+		}
+	}
+	return false
 }
 
 func looksLikeSecret(key string) bool {

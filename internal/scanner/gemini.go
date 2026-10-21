@@ -22,10 +22,14 @@ func (s *GeminiScanner) Scan(ctx context.Context, root string) (*ScannerResult, 
 	candidates := []string{
 		filepath.Join(root, "GEMINI.md"),
 		filepath.Join(root, ".gemini", "settings.json"),
+		filepath.Join(root, ".gemini", ".env"),
+		filepath.Join("/etc", "gemini-cli", "settings.json"),
+		filepath.Join("/Library", "Application Support", "GeminiCli", "settings.json"),
 	}
 	if home, err := os.UserHomeDir(); err == nil {
 		candidates = append(candidates,
 			filepath.Join(home, ".gemini", "settings.json"),
+			filepath.Join(home, ".gemini", ".env"),
 		)
 	}
 
@@ -49,9 +53,16 @@ func (s *GeminiScanner) Scan(ctx context.Context, root string) (*ScannerResult, 
 			var raw map[string]json.RawMessage
 			if json.Unmarshal(data, &raw) == nil {
 				if m, ok := raw["model"]; ok {
+					// Current schema nests it as "model": {"name": ...};
+					// older settings files used a plain string.
+					var nested struct {
+						Name string `json:"name"`
+					}
 					var modelVal string
 					if json.Unmarshal(m, &modelVal) == nil {
 						cfg.Settings["model"] = modelVal
+					} else if json.Unmarshal(m, &nested) == nil && nested.Name != "" {
+						cfg.Settings["model"] = nested.Name
 					}
 				}
 			}

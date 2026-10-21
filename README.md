@@ -95,14 +95,14 @@ agent-audit --html       # writes report.html
 
 | Tool | Config files scanned |
 |------|---------------------|
-| **Claude Code** | `CLAUDE.md`, `.claude/settings.json`, `.claude/settings.local.json`, `.claude/skills/`, `.claude/agents/`, `~/.claude/agents/`, `.mcp.json`, `~/.claude/settings.json`, hook commands |
+| **Claude Code** | `CLAUDE.md`, `CLAUDE.local.md`, `.claude/CLAUDE.md`, `~/.claude/CLAUDE.md`, managed settings, `.claude/settings.json`, `.claude/settings.local.json`, `.claude/skills/`, `.claude/agents/`, `~/.claude/agents/`, `.mcp.json`, `~/.claude/settings.json`, hook commands |
 | **OpenCode** | `opencode.json`, `opencode.jsonc`, `~/.config/opencode/opencode.json(c)`, `~/.local/share/opencode/auth.json` |
 | **Pi** | `SYSTEM.md`, `models.json`, `AGENTS.md`, `.pi/settings.json`, `~/.pi/agent/`, `~/.pi/agent/settings.json` |
 | **Codex** | `AGENTS.md`, `.codex/config.toml`, `~/.codex/config.toml`, `~/.codex/auth.json`, `~/.codex/*.config.toml` (profiles) |
 | **Cursor** | `.cursor/rules/`, `.cursor/settings.json`, legacy `.cursorrules` |
-| **Continue.dev** | `.continue/config.yaml` (including its `mcpServers` block) |
+| **Continue.dev** | `.continue/config.yaml`, `~/.continue/config.yaml`, `.continue/*/*.yaml` blocks (including `mcpServers`) |
 | **Aider** | `.aider.conf.yml`, `.aider*` (project and home directory), `.env` |
-| **Gemini CLI** | `GEMINI.md`, `.gemini/settings.json`, `~/.gemini/settings.json` |
+| **Gemini CLI** | `GEMINI.md`, `.gemini/settings.json`, `~/.gemini/settings.json`, system settings, `.gemini/.env`, `~/.gemini/.env` |
 
 All scanners also check for MCP server definitions in `.mcp.json` wherever present.
 
@@ -113,13 +113,18 @@ Scans all config files for exposed credentials. Matched values are masked in eve
 
 - OpenAI API keys (`sk-proj-…`)
 - Anthropic API keys (`sk-ant-…`)
-- GitHub tokens (`ghp_…`, `ghs_…`)
+- GitHub tokens (`ghp_…`, `ghs_…`, `github_pat_…`)
+- Google API keys (`AIza…`)
+- `Bearer` tokens (e.g. hardcoded MCP `Authorization` headers)
 - Generic `*_API_KEY`, `*_TOKEN`, `*_SECRET`, `*_PASSWORD` variables
 
 ### Permission & Sandbox Checks
 - Wildcard allow permissions (`"allow": ["*"]`)
-- Approval mode disabled (`approval_mode: none`)
-- Sandbox disabled (`sandbox = false`)
+- Approval mode disabled (`approval_mode: none`, Codex `approval_policy = "never"`)
+- Permission prompts bypassed (Claude Code `defaultMode: "bypassPermissions"`)
+- Project MCP servers auto-approved (`enableAllProjectMcpServers: true`)
+- Trusted MCP servers that skip confirmations (Gemini CLI `"trust": true`)
+- Sandbox disabled (`sandbox = false`, Codex `sandbox_mode = "danger-full-access"`)
 - Unrestricted shell execution
 
 ### MCP Command Checks

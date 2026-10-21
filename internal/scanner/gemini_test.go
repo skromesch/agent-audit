@@ -95,3 +95,39 @@ func TestGeminiScannerNoDetectionWithoutFiles(t *testing.T) {
 		t.Error("expected no agent config when no Gemini files exist, got one")
 	}
 }
+
+func TestGeminiScannerReadsNestedModelName(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", t.TempDir())
+	os.MkdirAll(filepath.Join(dir, ".gemini"), 0755)
+	os.WriteFile(filepath.Join(dir, ".gemini", "settings.json"), []byte(`{"model": {"name": "gemini-2.5-pro"}}`), 0644)
+
+	result, err := scanner.NewGeminiScanner().Scan(context.Background(), dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := result.Agent.Settings["model"]; got != "gemini-2.5-pro" {
+		t.Errorf("model = %q, want %q", got, "gemini-2.5-pro")
+	}
+}
+
+func TestGeminiScannerDetectsDotEnvSecret(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", t.TempDir())
+	os.MkdirAll(filepath.Join(dir, ".gemini"), 0755)
+	os.WriteFile(filepath.Join(dir, ".gemini", ".env"), []byte("GEMINI_API_KEY=AIzaSyA1234567890abcdefghijklmnopqrstuv\n"), 0644)
+
+	result, err := scanner.NewGeminiScanner().Scan(context.Background(), dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var secrets int
+	for _, f := range result.Findings {
+		if f.Category == "secrets" {
+			secrets++
+		}
+	}
+	if secrets == 0 {
+		t.Error("expected secret finding from .gemini/.env")
+	}
+}

@@ -14,6 +14,9 @@ var secretPatterns = []struct {
 	{"OpenAI API Key", regexp.MustCompile(`(?i)"?(OPENAI_API_KEY)"?\s*[=:]\s*"?(sk-[a-zA-Z0-9\-_]{20,})`)},
 	{"Anthropic API Key", regexp.MustCompile(`(?i)"?(ANTHROPIC_API_KEY)"?\s*[=:]\s*"?(sk-ant-[a-zA-Z0-9\-_]{20,})`)},
 	{"GitHub Token", regexp.MustCompile(`(?i)"?(GITHUB_TOKEN)"?\s*[=:]\s*"?(gh[ps]_[a-zA-Z0-9]{36,})`)},
+	{"GitHub Fine-grained Token", regexp.MustCompile(`()(github_pat_[a-zA-Z0-9_]{60,})`)},
+	{"Google API Key", regexp.MustCompile(`()(AIza[0-9A-Za-z\-_]{35})`)},
+	{"Bearer Token", regexp.MustCompile(`(?i)(Bearer)\s+([a-zA-Z0-9\-_.=]{20,})`)},
 	{"Generic API Key", regexp.MustCompile(`(?i)"?([a-zA-Z_]{3,}_(?:API_KEY|TOKEN|SECRET|PASSWORD))"?\s*[=:]\s*"?([a-zA-Z0-9\-_]{16,})`)},
 }
 
