@@ -127,9 +127,12 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "e":
 			go func() {
-				f, _ := os.Create("report.json")
+				f, err := os.Create("report.json")
+				if err != nil {
+					return
+				}
 				defer f.Close()
-				report.WriteJSON(a.result, f)
+				_ = report.WriteJSON(a.result, f)
 			}()
 		case "r":
 			// no-op: rescan requires plumbing not yet available

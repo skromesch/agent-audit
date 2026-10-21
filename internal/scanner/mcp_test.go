@@ -154,7 +154,7 @@ func countCategory(findings []model.Finding, category string) int {
 
 func TestMCPScannerParsesRemoteServerAndMasksHeaders(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", t.TempDir())
+	setHome(t, t.TempDir())
 	os.WriteFile(filepath.Join(dir, ".mcp.json"), []byte(`{
 		"mcpServers": {
 			"remote": {
@@ -193,7 +193,7 @@ func TestMCPScannerParsesRemoteServerAndMasksHeaders(t *testing.T) {
 
 func TestMCPScannerParsesProjectGeminiSettings(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", t.TempDir())
+	setHome(t, t.TempDir())
 	os.MkdirAll(filepath.Join(dir, ".gemini"), 0755)
 	os.WriteFile(filepath.Join(dir, ".gemini", "settings.json"), []byte(`{
 		"mcpServers": {
@@ -216,7 +216,7 @@ func TestMCPScannerParsesProjectGeminiSettings(t *testing.T) {
 
 func TestMCPScannerParsesOpenCodeMCP(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", t.TempDir())
+	setHome(t, t.TempDir())
 	os.WriteFile(filepath.Join(dir, "opencode.json"), []byte(`{
 		"mcp": {
 			"local": {"type": "local", "command": ["npx", "-y", "my-mcp"], "environment": {"MY_API_KEY": "abcdefghijklmnop1234"}},
@@ -242,7 +242,7 @@ func TestMCPScannerParsesOpenCodeMCP(t *testing.T) {
 
 func TestMCPScannerParsesCodexRemoteServer(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", t.TempDir())
+	setHome(t, t.TempDir())
 	os.MkdirAll(filepath.Join(dir, ".codex"), 0755)
 	os.WriteFile(filepath.Join(dir, ".codex", "config.toml"), []byte(`
 [mcp_servers.inline]
@@ -279,7 +279,7 @@ Authorization = "Bearer abcdefghijklmnopqrstuvwxyz123456"
 
 func TestMCPScannerParsesContinueMCPBlocks(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", t.TempDir())
+	setHome(t, t.TempDir())
 	os.MkdirAll(filepath.Join(dir, ".continue", "mcpServers"), 0755)
 	os.WriteFile(filepath.Join(dir, ".continue", "mcpServers", "sqlite.yaml"), []byte(`name: SQLite MCP
 version: 0.0.1

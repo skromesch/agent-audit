@@ -36,7 +36,7 @@ type Skill struct {
 	Description string   `json:"description"`
 	Path        string   `json:"path"`
 	EntryPoint  string   `json:"entry_point"`
-	Valid        bool     `json:"valid"`
+	Valid       bool     `json:"valid"`
 	Issues      []string `json:"issues,omitempty"`
 	Agent       string   `json:"agent"` // e.g. "Claude Code"
 	Scope       string   `json:"scope"` // "project" or "global"

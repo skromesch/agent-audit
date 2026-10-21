@@ -128,7 +128,7 @@ func TestPiScannerReadsGlobalSettingsJSON(t *testing.T) {
 	os.WriteFile(filepath.Join(dir, "SYSTEM.md"), []byte("prompt"), 0644)
 
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	setHome(t, home)
 	globalPiDir := filepath.Join(home, ".pi", "agent")
 	os.MkdirAll(globalPiDir, 0755)
 	os.WriteFile(filepath.Join(globalPiDir, "settings.json"), []byte(`{

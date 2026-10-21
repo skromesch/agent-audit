@@ -23,7 +23,6 @@ func renderOverview(result *model.ScanResult, width, height, scroll int) string 
 		return StyleBox.Width(width - 4).Render(strings.TrimRight(sb.String(), "\n"))
 	}
 
-
 	// Build a set of config files per agent for MCP matching
 	agentFiles := map[string]map[string]bool{}
 	for _, a := range result.Agents {
@@ -62,9 +61,10 @@ func renderOverview(result *model.ScanResult, width, height, scroll int) string 
 		critCount, warnCount := 0, 0
 		for _, f := range result.Findings {
 			if f.Tool == a.Tool {
-				if f.Severity == model.SeverityCritical {
+				switch f.Severity {
+				case model.SeverityCritical:
 					critCount++
-				} else if f.Severity == model.SeverityWarning {
+				case model.SeverityWarning:
 					warnCount++
 				}
 			}
@@ -72,23 +72,23 @@ func renderOverview(result *model.ScanResult, width, height, scroll int) string 
 
 		// Stats block
 		detail := fmt.Sprintf("(%d project, %d global)", projectSkills, globalSkills)
-		sb.WriteString(fmt.Sprintf("  %-16s %s  %s\n",
+		fmt.Fprintf(&sb, "  %-16s %s  %s\n",
 			"Skills",
 			StyleOK.Render(fmt.Sprintf("%d", skillCount)),
 			StyleMuted.Render(detail),
-		))
-		sb.WriteString(fmt.Sprintf("  %-16s %s\n", "MCP Servers", StyleOK.Render(fmt.Sprintf("%d", mcpCount))))
+		)
+		fmt.Fprintf(&sb, "  %-16s %s\n", "MCP Servers", StyleOK.Render(fmt.Sprintf("%d", mcpCount)))
 		for k, v := range a.Settings {
-			sb.WriteString(fmt.Sprintf("  %-16s %s\n", k, StyleMuted.Render(v)))
+			fmt.Fprintf(&sb, "  %-16s %s\n", k, StyleMuted.Render(v))
 		}
-		sb.WriteString(fmt.Sprintf("  %-16s %s\n", "Critical", StyleCritical.Render(fmt.Sprintf("%d", critCount))))
-		sb.WriteString(fmt.Sprintf("  %-16s %s\n", "Warnings", StyleWarning.Render(fmt.Sprintf("%d", warnCount))))
+		fmt.Fprintf(&sb, "  %-16s %s\n", "Critical", StyleCritical.Render(fmt.Sprintf("%d", critCount)))
+		fmt.Fprintf(&sb, "  %-16s %s\n", "Warnings", StyleWarning.Render(fmt.Sprintf("%d", warnCount)))
 
 		// Config files
 		if len(a.ConfigFiles) > 0 {
 			sb.WriteString("\n  " + StyleMuted.Render("Config files:") + "\n")
 			for _, f := range a.ConfigFiles {
-				sb.WriteString(fmt.Sprintf("    %s\n", f))
+				fmt.Fprintf(&sb, "    %s\n", f)
 			}
 		}
 		sb.WriteString("\n")

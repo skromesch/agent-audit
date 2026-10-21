@@ -41,7 +41,7 @@ func TestOpenCodeScannerDetectsProjectConfig(t *testing.T) {
 func TestOpenCodeScannerDetectsAuthJSONSecret(t *testing.T) {
 	dir := t.TempDir()
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	setHome(t, home)
 
 	authDir := filepath.Join(home, ".local", "share", "opencode")
 	os.MkdirAll(authDir, 0755)
@@ -66,7 +66,7 @@ func TestOpenCodeScannerDetectsAuthJSONSecret(t *testing.T) {
 
 func TestOpenCodeScannerDetectsJSONCVariant(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", t.TempDir())
+	setHome(t, t.TempDir())
 	os.WriteFile(filepath.Join(dir, "opencode.jsonc"), []byte(`{
 		"model": "anthropic/claude-sonnet-4-5"
 	}`), 0644)

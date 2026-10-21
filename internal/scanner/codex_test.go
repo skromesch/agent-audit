@@ -12,7 +12,7 @@ import (
 
 func TestCodexScannerDetectsConfig(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", t.TempDir())
+	setHome(t, t.TempDir())
 	os.WriteFile(filepath.Join(dir, "AGENTS.md"), []byte("# Codex instructions"), 0644)
 	codexDir := filepath.Join(dir, ".codex")
 	os.MkdirAll(codexDir, 0755)
@@ -38,7 +38,7 @@ approval = "suggest"
 func TestCodexScannerDetectsAuthJSONSecret(t *testing.T) {
 	dir := t.TempDir()
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	setHome(t, home)
 
 	codexDir := filepath.Join(dir, ".codex")
 	os.MkdirAll(codexDir, 0755)
@@ -71,7 +71,7 @@ model = "o3"
 func TestCodexScannerDetectsProfileTOML(t *testing.T) {
 	dir := t.TempDir()
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	setHome(t, home)
 
 	codexDir := filepath.Join(dir, ".codex")
 	os.MkdirAll(codexDir, 0755)
@@ -130,7 +130,7 @@ approval = "none"
 
 func TestCodexScannerReadsTopLevelKeys(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", t.TempDir())
+	setHome(t, t.TempDir())
 	codexDir := filepath.Join(dir, ".codex")
 	os.MkdirAll(codexDir, 0755)
 	os.WriteFile(filepath.Join(codexDir, "config.toml"), []byte(`
@@ -171,7 +171,7 @@ model = "o4-mini"
 
 func TestCodexScannerReadsProfilesTable(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", t.TempDir())
+	setHome(t, t.TempDir())
 	codexDir := filepath.Join(dir, ".codex")
 	os.MkdirAll(codexDir, 0755)
 	os.WriteFile(filepath.Join(codexDir, "config.toml"), []byte(`

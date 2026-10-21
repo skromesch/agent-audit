@@ -191,10 +191,6 @@ func extractSkillDescription(content string) string {
 	return ""
 }
 
-func extractFirstLine(content string) string {
-	return extractSkillDescription(content)
-}
-
 func splitLines(s string) []string {
 	return strings.Split(s, "\n")
 }

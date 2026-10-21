@@ -21,7 +21,8 @@ func (s *CursorScanner) Scan(ctx context.Context, root string) (*ScannerResult, 
 	cfg := &model.AgentConfig{Tool: "Cursor", Settings: map[string]string{}}
 
 	if _, err := os.Stat(cursorDir); err == nil {
-		filepath.WalkDir(cursorDir, func(path string, d os.DirEntry, err error) error {
+		// The callback swallows per-entry errors, so WalkDir itself can't fail meaningfully.
+		_ = filepath.WalkDir(cursorDir, func(path string, d os.DirEntry, err error) error {
 			if err != nil || d.IsDir() {
 				return nil
 			}

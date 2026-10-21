@@ -45,7 +45,6 @@ func TestRenderOverviewNil(t *testing.T) {
 	}
 }
 
-
 func TestRenderMCP(t *testing.T) {
 	out := renderMCP(sampleResult(), 80, 24, 0, 0, 0)
 	if !strings.Contains(out, "filesystem") {
@@ -93,7 +92,6 @@ func TestRenderSecurityEmpty(t *testing.T) {
 		t.Error("empty security should return non-empty string")
 	}
 }
-
 
 func TestRenderTabBar(t *testing.T) {
 	bar := renderTabBar(0, 120)
